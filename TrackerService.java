@@ -7,6 +7,7 @@ import java.util.*;
  */
 
 public interface TrackerService extends Remote{
-    List<String> updatePlayerList(String ip, String port) throws RemoteException;
+    List<String> addPlayer(String ip, String port) throws RemoteException;
+    Boolean updatePlayerList(List<String> updatedList) throws RemoteException;
 }
 

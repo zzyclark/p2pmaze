@@ -11,12 +11,19 @@ public class Tracker implements TrackerService {
 
     public Tracker() {}
 
-    private List<String> playerList = new ArrayList<>();
+    private List<String> playerList = new ArrayList<String>();
 
-    public List<String> updatePlayerList(String ip, String port) throws RemoteException {
+    @Override
+    public List<String> addPlayer(String ip, String port) throws RemoteException {
         String newPlayerAddr = ip + ':' + port;
         playerList.add(newPlayerAddr);
         return playerList;
+    }
+
+    @Override
+    public Boolean updatePlayerList(List<String> updatedList) throws RemoteException {
+        playerList = updatedList;
+        return true;
     }
 
     public static void main(String args[]) {
