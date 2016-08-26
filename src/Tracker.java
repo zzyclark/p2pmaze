@@ -29,7 +29,6 @@ public class Tracker implements TrackerService {
         return playerList;
     }
 
-    @Override
     public Boolean updatePlayerList(List<String> updatedList) throws RemoteException {
         playerList = updatedList;
         System.out.println("Updated Game List as below:");
@@ -37,6 +36,14 @@ public class Tracker implements TrackerService {
             System.out.println(player);
         }
         return true;
+    }
+
+    public int getN(){
+        return N;
+    }
+
+    public  int getK(){
+        return K;
     }
 
     public static void main(String args[]) {

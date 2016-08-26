@@ -2,21 +2,43 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-
+import java.util.*;
 /**
  * Created by clark on 22/8/16.
  */
 
 public class GameServer implements GameService {
 	public GameServer() {}
+	public GameServer(int n, int k) { N =n;K=k; }
 
 	@Override
 	public Boolean isActive() throws RemoteException {
 		return true;
 	}
 
-	private String playerAddr = "";
+	public void printGameState(){
+		gameState.add(new int[]{1,2,3});
+		gameState.add(new int[]{1,2,3});
+		System.out.println("Current Game State:");
+		for(int[] arr : gameState){
+			System.out.println(Arrays.toString(arr));
+		}
+	}
 
+	public void makeMove(int m){
+		if(m != 1 && m != 2 && m != 3 && m != 4 && m != 9){
+			System.out.println("Wrong step detected!");
+		}
+	}
+
+	private String playerAddr = "";
+	private List<int[]> gameState = new ArrayList<int[]>();
+	private List<String> playerList = new ArrayList<String>();
+	private int xCord;
+	private int yCord;
+	private int score;
+	public int N;
+	public int K;
 	public void start(String playerID, String playerIP, int playerPort) {
 
 		GameService stub = null;
@@ -41,7 +63,9 @@ public class GameServer implements GameService {
             }
 			registry = LocateRegistry.getRegistry(playerPort);
 			registry.bind(bindName, stub);
-
+			xCord = -1;
+			yCord = -1;
+			score = 0;
 			System.out.println("Game " + playerAddr + " started normally.");
 		} catch (Exception e) {
 			try {
@@ -54,4 +78,5 @@ public class GameServer implements GameService {
 			}
 		}
 	}
+
 }

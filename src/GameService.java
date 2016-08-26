@@ -7,5 +7,7 @@ import java.util.*;
  */
 public interface GameService extends Remote {
 	Boolean isActive() throws RemoteException;
+	void printGameState() throws RemoteException;
+	void makeMove(int m) throws RemoteException;
 }
 

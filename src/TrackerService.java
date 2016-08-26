@@ -9,5 +9,7 @@ import java.util.*;
 public interface TrackerService extends Remote{
     List<String> addPlayer(String playerID, String ip, int port) throws RemoteException;
     Boolean updatePlayerList(List<String> updatedList) throws RemoteException;
+    int getN() throws RemoteException;
+    int getK() throws RemoteException;
 }
 
