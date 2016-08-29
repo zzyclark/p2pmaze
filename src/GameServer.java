@@ -17,12 +17,8 @@ public class GameServer implements GameService {
 	}
 
 	public void printGameState(){
-		gameState.add(new int[]{1,2,3});
-		gameState.add(new int[]{1,2,3});
 		System.out.println("Current Game State:");
-		for(int[] arr : gameState){
-			System.out.println(Arrays.toString(arr));
-		}
+		//print out game state
 	}
 
 	public void makeMove(int m){
@@ -32,15 +28,16 @@ public class GameServer implements GameService {
 	}
 
 	private String playerAddr = "";
-	private List<int[]> gameState = new ArrayList<int[]>();
+	private String[][] gameState = null;
+	//private List<String[]> gameState = new ArrayList<String[]>();
 	private List<String> playerList = new ArrayList<String>();
 	private int xCord;
 	private int yCord;
 	private int score;
 	public int N;
 	public int K;
-	public void start(String playerID, String playerIP, int playerPort) {
-
+	public void start(String playerID, String playerIP, int playerPort, int N, int K) {
+		gameState = new String[playerPort][playerPort];
 		GameService stub = null;
 		Registry registry = null;
 		playerAddr = playerID + '@' + playerIP + ':' + playerPort;

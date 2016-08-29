@@ -65,7 +65,7 @@ public class Game {
             Thread t = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    player.start(playerID, playerIP, playerPort);
+                    player.start(playerID, playerIP, playerPort, N, K);
                 }
             });
 
