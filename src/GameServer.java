@@ -2,12 +2,25 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 /**
  * Created by clark on 22/8/16.
  */
 
 public class GameServer implements GameService {
+	private String playerAddr = "";
+	private List<int[]> gameState = new ArrayList<int[]>();
+	private List<String> playerList = new ArrayList<String>();
+	private String[] serverList = new String[2];
+	private List<String> userContactHistory = new ArrayList<String>();
+	private int xCord;
+	private int yCord;
+	private int score;
+	public int N;
+	public int K;
+
 	public GameServer() {}
 	public GameServer(int n, int k) { N =n;K=k; }
 
@@ -15,7 +28,7 @@ public class GameServer implements GameService {
 	public Boolean isActive() throws RemoteException {
 		return true;
 	}
-
+	@Override
 	public void printGameState(){
 		gameState.add(new int[]{1,2,3});
 		gameState.add(new int[]{1,2,3});
@@ -25,20 +38,32 @@ public class GameServer implements GameService {
 		}
 	}
 
+	@Override
 	public void makeMove(int m){
 		if(m != 1 && m != 2 && m != 3 && m != 4 && m != 9){
 			System.out.println("Wrong step detected!");
 		}
 	}
 
-	private String playerAddr = "";
-	private List<int[]> gameState = new ArrayList<int[]>();
-	private List<String> playerList = new ArrayList<String>();
-	private int xCord;
-	private int yCord;
-	private int score;
-	public int N;
-	public int K;
+	@Override
+	public List<String> contactServer(String userAddr) throws RemoteException {
+		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+		Date currentTime = new Date();
+		String history = userAddr + " has contacted server at: " + currentTime;
+		userContactHistory.add(history);
+		return userContactHistory;
+	}
+
+	@Override
+	public String[] getServerList() throws RemoteException {
+		return serverList;
+	}
+
+	@Override
+	public void updateServerList(String[] newServerList) throws RemoteException {
+		serverList = newServerList;
+	}
+
 	public void start(String playerID, String playerIP, int playerPort) {
 
 		GameService stub = null;

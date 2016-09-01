@@ -9,5 +9,8 @@ public interface GameService extends Remote {
 	Boolean isActive() throws RemoteException;
 	void printGameState() throws RemoteException;
 	void makeMove(int m) throws RemoteException;
+	List<String> contactServer(String userAddr) throws RemoteException;
+	String[] getServerList() throws RemoteException;
+	void updateServerList(String[] newServerList) throws RemoteException;
 }
 

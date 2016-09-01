@@ -13,6 +13,7 @@ import java.util.Scanner;
  * Created by clark on 22/8/16.
  */
 public class Game {
+    private static String[] serverList = new String[2];
     public Game() {}
 
     private static void updatePlayerList(List<String> userList, String myAddr, TrackerService trackerStub) throws RemoteException {
@@ -46,6 +47,66 @@ public class Game {
         }
     }
 
+    private static void getServerList(List<String> userList, String userIp, Integer userPort, String userId) throws Exception {
+        String otherUser = userList.get(0);
+        Integer otherUserPort = Integer.parseInt(otherUser.substring(otherUser.indexOf(":") + 1));
+        Registry otherUserRegistry = LocateRegistry.getRegistry(otherUserPort);
+        Registry userRegistry = LocateRegistry.getRegistry(userPort);
+
+        String[] test = otherUserRegistry.list();
+        String myAddr = userId + '@' + userIp + ':' + userPort;
+        GameService otherUserStub = (GameService) otherUserRegistry.lookup("rmi://" + otherUser + "/game");
+        GameService userStub = (GameService) userRegistry.lookup("rmi://" + myAddr + "/game");
+
+        String [] newServerList = otherUserStub.getServerList();
+
+        if (newServerList[0] == null && newServerList[1] == null) {
+            //condition 1, no server in list
+            newServerList[0] = myAddr;
+        } else if (serverList[1] == null) {
+            //condition 2, 1 main server in list
+            newServerList[1] = myAddr;
+        }
+
+        //update game console server list
+        serverList = newServerList;
+        //update server list to user own server
+        userStub.updateServerList(serverList);
+    }
+
+    private static void waitUserServerStart (String addr) {
+        try {
+            int port = Integer.parseInt(addr.split(":")[1]);
+            Registry registry = LocateRegistry.getRegistry(port);
+            GameService otherPlayerStub = (GameService) registry.lookup("rmi://" + addr + "/game");
+            if (otherPlayerStub.isActive()) {
+                return;
+            }
+        } catch (ConnectException e) {
+            waitUserServerStart(addr);
+        } catch (NotBoundException e){
+            waitUserServerStart(addr);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return;
+    }
+
+    private static void makeMovement(String movement, String userAddr) throws Exception {
+        String server = serverList[0];
+        Integer serverPort = Integer.parseInt(server.substring(server.indexOf(":") + 1));
+        Registry registry = LocateRegistry.getRegistry(serverPort);
+        GameService serverStub = (GameService) registry.lookup("rmi://" + server + "/game");
+
+        List<String> newState = serverStub.contactServer(userAddr);
+
+        System.out.println("You have get new contact history list after your movement\n");
+        for (String history : newState) {
+            System.out.println(history);
+        }
+    }
+
     public static void main(String[] args) {
         final String ip = args[0];
         final String port = args[1];
@@ -73,15 +134,20 @@ public class Game {
 
             String myAddr = playerID + '@' + playerIP + ':' + playerPort;
 
+            //do all the rest until my server start
+            waitUserServerStart(myAddr);
+
             List<String> playerList = trackerStub.addPlayer(playerID, playerIP, playerPort);
 
             updatePlayerList(playerList, myAddr, trackerStub);
             System.out.println(myAddr + " joined the game");
+            getServerList(playerList, playerIP, playerPort, playerID);
             while(true){
                 Scanner reader = new Scanner(System.in);
                 int step = reader.nextInt();
                 try {
-                    player.printGameState();
+                    makeMovement("no move", myAddr);
+//                    player.printGameState();
                 }
                 catch (Exception ex){System.out.println(ex.toString());}
             }
