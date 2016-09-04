@@ -45,6 +45,20 @@ public class GameServer implements GameService {
 	}
 
 	@Override
+	public void updateGameState(String[][] gameState) throws RemoteException {
+		this.GameState = gameState;
+	}
+
+	@Override
+	public void updateBackupServer() throws Exception {
+		String backupServer = serverList[1];
+		Integer backupServerPort = Integer.parseInt(backupServer.substring(backupServer.indexOf(":") + 1));
+		Registry registry = LocateRegistry.getRegistry(backupServerPort);
+		GameService backupServerStub = (GameService) registry.lookup("rmi://" + backupServer + "/game");
+		backupServerStub.updateGameState(GameState);
+	}
+
+	@Override
 	public Boolean isActive() throws RemoteException {
 		return true;
 	}

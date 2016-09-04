@@ -54,14 +54,9 @@ public class Game {
     private static void getServerList(List<String> userList, String userIp, Integer userPort, String userId) throws Exception {
         //Assume main server never die
         String mainServer = userList.get(0);
-//        Integer mainServerPort = Integer.parseInt(mainServer.substring(mainServer.indexOf(":") + 1));
-//        Registry otherUserRegistry = LocateRegistry.getRegistry(mainServerPort);
-//        Registry userRegistry = LocateRegistry.getRegistry(userPort);
-//
-//        String[] test = otherUserRegistry.list();
         String myAddr = userId + '@' + userIp + ':' + userPort;
-        GameService mainServerStub = getGameService(mainServer); //(GameService) otherUserRegistry.lookup("rmi://" + mainServer + "/game");
-        GameService userStub = getGameService(myAddr);//(GameService) userRegistry.lookup("rmi://" + myAddr + "/game");
+        GameService mainServerStub = getGameService(mainServer);
+        GameService userStub = getGameService(myAddr);
 
         String [] newServerList = mainServerStub.getServerList();
 
@@ -151,9 +146,9 @@ public class Game {
 
             Registry registry = LocateRegistry.getRegistry(ip,Integer.parseInt(port));
             TrackerService trackerStub = (TrackerService) registry.lookup("Tracker");
-            int N = trackerStub.getN();
-            int K = trackerStub.getK();
-            final GameServer player = new GameServer();
+            final int N = trackerStub.getN();
+            final int K = trackerStub.getK();
+            final GameServer player = new GameServer(N,K);
 
             System.setProperty("java.rmi.server.hostname",playerIP);
 
