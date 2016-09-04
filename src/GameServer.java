@@ -2,12 +2,32 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 /**
  * Created by clark on 22/8/16.
  */
 
 public class GameServer implements GameService {
+	//private String playerAddr = "";
+	//private List<int[]> gameState = new ArrayList<int[]>();
+	//private List<String> playerList = new ArrayList<String>();
+	private String[] serverList = new String[2];
+	private List<String> userContactHistory = new ArrayList<String>();
+	private int xCord;
+	private int yCord;
+	private int score;
+	public int N;
+	public int K;
+	public String[] players = {};
+	public String[][] GameState ={};
+	private String ID;
+	private String playerAddr = "";
+	private String[][] gameState = null;
+	private List<String> playerList = new ArrayList<String>();
+	public  Player player = null;
+
 	public GameServer() {}
 	public GameServer(int n, int k) { N =n;K=k; }
 
@@ -17,40 +37,53 @@ public class GameServer implements GameService {
 	}
 
 	public void printGameState(){
+		//gameState.add(new int[]{1,2,3});
+		//gameState.add(new int[]{1,2,3});
 		System.out.println("Current Game State:");
 		//print out game state
+		testGUI gui = new testGUI(this.ID, this.players, this.GameState, this.N, this.K);
+		gui.setSize(500,500);
 	}
 
 	public void makeMove(int m){
-		if(m != 1 && m != 2 && m != 3 && m != 4 && m != 9){
+		if(m != 0 && m != 1 && m != 2 && m != 3 && m != 4 && m != 9){
 			System.out.println("Wrong step detected!");
 		}
 	}
+	@Override
+	public List<String> contactServer(String userAddr) throws RemoteException {
+		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+		Date currentTime = new Date();
+		String history = userAddr + " has contacted server at: " + currentTime;
+		userContactHistory.add(history);
+		return userContactHistory;
+	}
 
-	private String playerAddr = "";
-	private String[][] gameState = null;
-	//private List<String[]> gameState = new ArrayList<String[]>();
-	private List<String> playerList = new ArrayList<String>();
-	private int xCord;
-	private int yCord;
-	private int score;
-	public int N;
-	public int K;
+	@Override
+	public String[] getServerList() throws RemoteException {
+		return serverList;
+	}
+
+	@Override
+	public void updateServerList(String[] newServerList) throws RemoteException {
+		serverList = newServerList;
+	}
+
 	public void start(String playerID, String playerIP, int playerPort, int N, int K) {
-		gameState = new String[playerPort][playerPort];
+		ID = playerID;
+		gameState = new String[N][K];
 		GameService stub = null;
 		Registry registry = null;
 		playerAddr = playerID + '@' + playerIP + ':' + playerPort;
 		String bindName = "rmi://" + playerAddr + "/game";
-       	System.setProperty("java.rmi.server.hostname",playerIP);
+		System.setProperty("java.rmi.server.hostname",playerIP);
 		try {
 			GameServer obj = new GameServer();
-
 			stub = (GameService) UnicastRemoteObject.exportObject(obj, 0);
 
             try{
                 LocateRegistry.createRegistry(playerPort);
-                //Runtime.getRuntime().exec("rmiregistry "+port);
+                Runtime.getRuntime().exec("rmiregistry "+playerPort);
             }
             catch(Exception ex){
             	//maybe rmi already started at playerPort
@@ -60,9 +93,6 @@ public class GameServer implements GameService {
             }
 			registry = LocateRegistry.getRegistry(playerPort);
 			registry.bind(bindName, stub);
-			xCord = -1;
-			yCord = -1;
-			score = 0;
 			System.out.println("Game " + playerAddr + " started normally.");
 		} catch (Exception e) {
 			try {
