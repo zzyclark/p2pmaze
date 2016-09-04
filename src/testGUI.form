@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="testGUI">
+  <grid id="27dc6" binding="panel1" default-binding="true" layout-manager="BorderLayout" hgap="0" vgap="0">
+    <constraints>
+      <xy x="20" y="20" width="500" height="400"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <component id="dc186" class="javax.swing.JTable" binding="table">
+        <constraints border-constraint="East"/>
+        <properties>
+          <enabled value="false"/>
+          <focusable value="false"/>
+          <updateSelectionOnSort value="false"/>
+        </properties>
+        <clientProperties>
+          <html.disable class="java.lang.Boolean" value="true"/>
+        </clientProperties>
+      </component>
+      <component id="102ff" class="javax.swing.JList" binding="playerList">
+        <constraints border-constraint="West"/>
+        <properties/>
+      </component>
+    </children>
+  </grid>
+</form>
