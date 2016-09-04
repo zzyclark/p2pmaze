@@ -148,7 +148,7 @@ public class Game {
             TrackerService trackerStub = (TrackerService) registry.lookup("Tracker");
             final int N = trackerStub.getN();
             final int K = trackerStub.getK();
-            final GameServer player = new GameServer(N,K);
+            final GameServer player = new GameServer();
 
             System.setProperty("java.rmi.server.hostname",playerIP);
 

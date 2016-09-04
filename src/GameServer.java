@@ -109,8 +109,8 @@ public class GameServer implements GameService {
 	@Override
 	public void setServer(Boolean IsPrimary, Boolean IsBackup) throws RemoteException{
 		System.out.println("ser server");
-		IsPrimaryServer = true;
-		IsBackupServer = true;
+		IsPrimaryServer = IsPrimary;
+		IsBackupServer = IsBackup;
 	}
 
 	public void start(String playerID, String playerIP, int playerPort, int N, int K) {
