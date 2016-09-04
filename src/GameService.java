@@ -1,7 +1,6 @@
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.*;
-import java.util.function.BooleanSupplier;
 
 /**
  * Created by clark on 22/8/16.
@@ -13,6 +12,5 @@ public interface GameService extends Remote {
 	List<String> contactServer(String userAddr) throws RemoteException;
 	String[] getServerList() throws RemoteException;
 	void updateServerList(String[] newServerList) throws RemoteException;
-	void setServer(Boolean IsPrimary, Boolean IsBackup) throws RemoteException;
 }
 
