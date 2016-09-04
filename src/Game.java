@@ -52,24 +52,31 @@ public class Game {
     }
 
     private static void getServerList(List<String> userList, String userIp, Integer userPort, String userId) throws Exception {
-        String otherUser = userList.get(0);
-        Integer otherUserPort = Integer.parseInt(otherUser.substring(otherUser.indexOf(":") + 1));
-        Registry otherUserRegistry = LocateRegistry.getRegistry(otherUserPort);
+        //Assume main server never die
+        String mainServer = userList.get(0);
+        Integer mainServerPort = Integer.parseInt(mainServer.substring(mainServer.indexOf(":") + 1));
+        Registry otherUserRegistry = LocateRegistry.getRegistry(mainServerPort);
         Registry userRegistry = LocateRegistry.getRegistry(userPort);
 
         String[] test = otherUserRegistry.list();
         String myAddr = userId + '@' + userIp + ':' + userPort;
-        GameService otherUserStub = (GameService) otherUserRegistry.lookup("rmi://" + otherUser + "/game");
+        GameService mainServerStub = (GameService) otherUserRegistry.lookup("rmi://" + mainServer + "/game");
         GameService userStub = (GameService) userRegistry.lookup("rmi://" + myAddr + "/game");
 
-        String [] newServerList = otherUserStub.getServerList();
+        String [] newServerList = mainServerStub.getServerList();
 
         if (newServerList[0] == null && newServerList[1] == null) {
             //condition 1, no server in list
             newServerList[0] = myAddr;
-        } else if (serverList[1] == null) {
+            userStub.setServer(true,false);
+            System.out.println("set primary server");
+        } else if (newServerList[1] == null) {
             //condition 2, 1 main server in list
             newServerList[1] = myAddr;
+            userStub.setServer(false,true);
+            //inform main server about the new back up server
+            mainServerStub.updateServerList(newServerList);
+            System.out.println("set backup server");
         }
 
         //update game console server list

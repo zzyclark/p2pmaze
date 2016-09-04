@@ -5,6 +5,8 @@ import java.rmi.server.UnicastRemoteObject;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.zip.Deflater;
+
 /**
  * Created by clark on 22/8/16.
  */
@@ -21,12 +23,14 @@ public class GameServer implements GameService {
 	public int N;
 	public int K;
 	public String[] players = {};
-	public String[][] GameState ={};
+	public String[][] GameState =null;
 	private String ID;
 	private String playerAddr = "";
-	private String[][] gameState = null;
+	//private String[][] gameState = null;
 	private List<String> playerList = new ArrayList<String>();
 	public  Player player = null;
+	public boolean IsPrimaryServer;
+	public boolean IsBackupServer;
 
 	public GameServer() {}
 	public GameServer(int n, int k) { N =n;K=k; }
@@ -36,15 +40,25 @@ public class GameServer implements GameService {
 		return true;
 	}
 
+	@Override
 	public void printGameState(){
 		//gameState.add(new int[]{1,2,3});
 		//gameState.add(new int[]{1,2,3});
+		GameState[0][1] = "*";
+		GameState[1][2] = "x";
+		GameState[2][3]="ab";
 		System.out.println("Current Game State:");
 		//print out game state
-		testGUI gui = new testGUI(this.ID, this.players, this.GameState, this.N, this.K);
+		String servername = this.ID;
+		if(IsPrimaryServer)
+			servername += "(Main Server)";
+		else if(IsBackupServer)
+			servername += "(Backup Server)";
+		testGUI gui = new testGUI(servername, players, GameState, N, K);
 		gui.setSize(500,500);
 	}
 
+	@Override
 	public void makeMove(int m){
 		if(m != 0 && m != 1 && m != 2 && m != 3 && m != 4 && m != 9){
 			System.out.println("Wrong step detected!");
@@ -69,11 +83,20 @@ public class GameServer implements GameService {
 		serverList = newServerList;
 	}
 
+	@Override
+	public void setServer(Boolean IsPrimary, Boolean IsBackup) throws RemoteException{
+		System.out.println("ser server");
+		IsPrimaryServer = true;
+		IsBackupServer = true;
+	}
+
 	public void start(String playerID, String playerIP, int playerPort, int N, int K) {
 		ID = playerID;
-		gameState = new String[N][K];
+		GameState = new String[N][K];
 		GameService stub = null;
 		Registry registry = null;
+		IsPrimaryServer = false;
+		IsBackupServer = false;
 		playerAddr = playerID + '@' + playerIP + ':' + playerPort;
 		String bindName = "rmi://" + playerAddr + "/game";
 		System.setProperty("java.rmi.server.hostname",playerIP);
