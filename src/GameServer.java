@@ -25,9 +25,23 @@ public class GameServer implements GameService {
 	public GameServer(int n, int k) { N =n;K=k; }
 
 	@Override
+	public void updateGameState(String[][] gameState) throws RemoteException {
+	}
+
+	@Override
+	public void updateBackupServer() throws Exception {
+		String backupServer = serverList[1];
+		Integer backupServerPort = Integer.parseInt(backupServer.substring(backupServer.indexOf(":") + 1));
+		Registry registry = LocateRegistry.getRegistry(backupServerPort);
+		GameService backupServerStub = (GameService) registry.lookup("rmi://" + backupServer + "/game");
+		backupServerStub.updateGameState(null);
+	}
+
+	@Override
 	public Boolean isActive() throws RemoteException {
 		return true;
 	}
+
 	@Override
 	public void printGameState(){
 		gameState.add(new int[]{1,2,3});
