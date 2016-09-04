@@ -23,17 +23,26 @@ public class GameServer implements GameService {
 	public int N;
 	public int K;
 	public String[] players = {};
-	public String[][] GameState =null;
+	public String[][] GameState = null;
 	private String ID;
 	private String playerAddr = "";
 	//private String[][] gameState = null;
 	private List<String> playerList = new ArrayList<String>();
-	public  Player player = null;
+	//public  Player player = null;
 	public boolean IsPrimaryServer;
 	public boolean IsBackupServer;
 
 	public GameServer() {}
-	public GameServer(int n, int k) { N =n;K=k; }
+	public GameServer(int n, int k, String id, String addr) {
+	    this.N =n;
+        this.K=k;
+        this.ID = id;
+        this.GameState = new String[N][K];
+        this.IsPrimaryServer = false;
+        this.IsBackupServer = false;
+        this.playerAddr = addr;
+
+	}
 
 	@Override
 	public Boolean isActive() throws RemoteException {
@@ -91,17 +100,13 @@ public class GameServer implements GameService {
 	}
 
 	public void start(String playerID, String playerIP, int playerPort, int N, int K) {
-		ID = playerID;
-		GameState = new String[N][K];
 		GameService stub = null;
 		Registry registry = null;
-		IsPrimaryServer = false;
-		IsBackupServer = false;
-		playerAddr = playerID + '@' + playerIP + ':' + playerPort;
-		String bindName = "rmi://" + playerAddr + "/game";
+        String addr = playerID + '@' + playerIP + ':' + playerPort;
+		String bindName = "rmi://" + addr + "/game";
 		System.setProperty("java.rmi.server.hostname",playerIP);
 		try {
-			GameServer obj = new GameServer();
+			GameServer obj = new GameServer(N,K,playerID, addr);
 			stub = (GameService) UnicastRemoteObject.exportObject(obj, 0);
 
             try{
@@ -116,12 +121,12 @@ public class GameServer implements GameService {
             }
 			registry = LocateRegistry.getRegistry(playerPort);
 			registry.bind(bindName, stub);
-			System.out.println("Game " + playerAddr + " started normally.");
+			System.out.println("Game " + addr + " started normally.");
 		} catch (Exception e) {
 			try {
 				registry.unbind(bindName);
 				registry.bind(bindName, stub);
-				System.out.println("Game " + playerAddr + " restart normally.");
+				System.out.println("Game " + addr + " restart normally.");
 			} catch (Exception ee) {
 				System.err.println("Game Server Exception: " + ee.toString());
 				ee.printStackTrace();
