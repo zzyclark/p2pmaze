@@ -28,7 +28,6 @@ public class GameServer implements GameService {
 	private String playerAddr = "";
 	//private String[][] gameState = null;
 	private List<String> playerList = new ArrayList<String>();
-	public  Player player = null;
 	public boolean IsPrimaryServer;
 	public boolean IsBackupServer;
 
@@ -37,6 +36,7 @@ public class GameServer implements GameService {
 
 	@Override
 	public void updateGameState(String[][] gameState) throws RemoteException {
+		this.GameState = gameState;
 	}
 
 	@Override
@@ -45,7 +45,7 @@ public class GameServer implements GameService {
 		Integer backupServerPort = Integer.parseInt(backupServer.substring(backupServer.indexOf(":") + 1));
 		Registry registry = LocateRegistry.getRegistry(backupServerPort);
 		GameService backupServerStub = (GameService) registry.lookup("rmi://" + backupServer + "/game");
-		backupServerStub.updateGameState(null);
+		backupServerStub.updateGameState(GameState);
 	}
 
 	@Override

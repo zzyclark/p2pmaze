@@ -126,8 +126,8 @@ public class Game {
 
             Registry registry = LocateRegistry.getRegistry(ip,Integer.parseInt(port));
             TrackerService trackerStub = (TrackerService) registry.lookup("Tracker");
-            int N = trackerStub.getN();
-            int K = trackerStub.getK();
+            final int N = trackerStub.getN();
+            final int K = trackerStub.getK();
             final GameServer player = new GameServer(N,K);
 
             System.setProperty("java.rmi.server.hostname",playerIP);
