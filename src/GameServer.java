@@ -12,9 +12,6 @@ import java.util.zip.Deflater;
  */
 
 public class GameServer implements GameService {
-	//private String playerAddr = "";
-	//private List<int[]> gameState = new ArrayList<int[]>();
-	//private List<String> playerList = new ArrayList<String>();
 	private String[] serverList = new String[2];
 	private List<String> userContactHistory = new ArrayList<String>();
 	private int xCord;
@@ -26,11 +23,11 @@ public class GameServer implements GameService {
 	public String[][] GameState = null;
 	private String ID;
 	private String playerAddr = "";
-	//private String[][] gameState = null;
 	private List<String> playerList = new ArrayList<String>();
 	//public  Player player = null;
 	public boolean IsPrimaryServer;
 	public boolean IsBackupServer;
+	public testGUI gui;
 
 	public GameServer() {}
 	public GameServer(int n, int k, String id, String addr) {
@@ -46,7 +43,9 @@ public class GameServer implements GameService {
 
 	@Override
 	public void updateGameState(String[][] gameState) throws RemoteException {
-		this.GameState = gameState;
+		//for (int i = 0; i < gameState.length; i++)
+		//	this.GameState[i] = Arrays.copyOf(gameState[i], gameState[i].length);
+		GameState = gameState;
 	}
 
 	@Override
@@ -77,7 +76,7 @@ public class GameServer implements GameService {
 			servername += "(Main Server)";
 		else if(IsBackupServer)
 			servername += "(Backup Server)";
-		testGUI gui = new testGUI(servername, players, GameState, N, K);
+		gui = new testGUI(servername, players, GameState, N, K);
 		gui.setSize(500,500);
 	}
 
@@ -86,6 +85,9 @@ public class GameServer implements GameService {
 		if(m != 0 && m != 1 && m != 2 && m != 3 && m != 4 && m != 9){
 			System.out.println("Wrong step detected!");
 		}
+		GameState[2][3]="aaa";
+		GameState[3][4]="ab";
+		gui.update();
 	}
 	@Override
 	public List<String> contactServer(String userAddr) throws RemoteException {
@@ -99,6 +101,11 @@ public class GameServer implements GameService {
 	@Override
 	public String[] getServerList() throws RemoteException {
 		return serverList;
+	}
+
+	@Override
+	public String[][] getGameState() throws RemoteException{
+		return GameState;
 	}
 
 	@Override

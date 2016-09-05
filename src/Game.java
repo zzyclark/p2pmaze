@@ -51,8 +51,10 @@ public class Game {
         }
     }
 
-    private static void getServerList(List<String> userList, String userIp, Integer userPort, String userId) throws Exception {
+    private static GameService getServerList(List<String> userList, String userIp, Integer userPort, String userId) throws Exception {
         //Assume main server never die
+        //First player is the server
+        //Second is the back up server
         String mainServer = userList.get(0);
         String myAddr = userId + '@' + userIp + ':' + userPort;
         GameService mainServerStub = getGameService(mainServer);
@@ -63,6 +65,7 @@ public class Game {
         if (newServerList[0] == null && newServerList[1] == null) {
             //condition 1, no server in list
             newServerList[0] = myAddr;
+            mainServerStub = userStub;
             userStub.setServer(true,false);
             System.out.println("set primary server");
         } else if (newServerList[1] == null) {
@@ -79,6 +82,7 @@ public class Game {
         //update server list to user own server
         userStub.updateServerList(serverList);
         System.out.println("Server list updated");
+        return mainServerStub;
     }
 
     private static void waitUserServerStart (String addr) {
@@ -167,22 +171,27 @@ public class Game {
             //do all the rest until my server start
             waitUserServerStart(myAddr);
 
+            //get the player list from tracker
             List<String> playerList = trackerStub.addPlayer(playerID, playerIP, playerPort);
-
+            //update the player list (remove dead and add myself)
             updatePlayerList(playerList, myAddr, trackerStub);
 
             System.out.println(myAddr + " joined the game");
-            getServerList(playerList, playerIP, playerPort, playerID);
-//            GameService myService = getGameService(myAddr);
 
-            Registry r = LocateRegistry.getRegistry(playerPort);
-            GameService myService = (GameService) r.lookup("rmi://" + myAddr + "/game");
+            //get this game client server
+            GameService serverService = getServerList(playerList, playerIP, playerPort, playerID);
+            GameService myService = getGameService(myAddr);
+            //get updated game state
+            myService.updateGameState(serverService.getGameState());
+
+
+            //join the game
             myService.printGameState();
             while(true){
                 Scanner reader = new Scanner(System.in);
                 int step = reader.nextInt();
                 try {
-                    makeMovement(step, myAddr);
+                     makeMovement(step, myAddr);
                 }
                 catch (Exception ex){System.out.println(ex.toString());}
             }

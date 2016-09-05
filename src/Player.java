@@ -5,4 +5,5 @@ public class Player {
     public int xCord;
     public int yCord;
     public int score;
+    public GameService PlayerServer;
 }
