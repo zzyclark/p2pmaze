@@ -47,7 +47,7 @@ public class GameServer implements GameService {
 	public void updateGameState(String[][] gameState) throws RemoteException {
 		//for (int i = 0; i < gameState.length; i++)
 		//	this.GameState[i] = Arrays.copyOf(gameState[i], gameState[i].length);
-		GameState = gameState;
+		this.GameState = gameState;
 	}
 
 	@Override
@@ -80,6 +80,13 @@ public class GameServer implements GameService {
 	}
 
 	@Override
+	public Boolean updateGui(String[][] gameState) throws RemoteException {
+		this.GameState = gameState;
+		this.gui.update();
+		return true;
+	}
+
+	@Override
 	public void updateBackupServer() throws Exception {
 		String backupServer = serverList[1];
 		Integer backupServerPort = Integer.parseInt(backupServer.substring(backupServer.indexOf(":") + 1));
@@ -97,9 +104,9 @@ public class GameServer implements GameService {
 	public void printGameState(){
 		//gameState.add(new int[]{1,2,3});
 		//gameState.add(new int[]{1,2,3});
-		GameState[0][1] = "*";
-		GameState[1][2] = "x";
-		GameState[2][3]="ab";
+		this.GameState[0][1] = "*";
+		this.GameState[1][2] = "x";
+		this.GameState[2][3]="ab";
 		System.out.println("Current Game State:");
 		//print out game state
 		String servername = this.ID;
@@ -107,18 +114,19 @@ public class GameServer implements GameService {
 			servername += "(Main Server)";
 		else if(IsBackupServer)
 			servername += "(Backup Server)";
-		gui = new testGUI(servername, players, GameState, N, K);
-		gui.setSize(500,500);
+//		this.gui = new testGUI(servername, this.players, this.GameState, this.N, this.K);
+//		this.gui.setSize(500,500);
 	}
 
 	@Override
-	public void makeMove(int m){
+	public String[][] makeMove(int m){
 		if(m != 0 && m != 1 && m != 2 && m != 3 && m != 4 && m != 9){
 			System.out.println("Wrong step detected!");
 		}
-		GameState[2][3]="aaa";
-		GameState[3][4]="ab";
-		gui.update();
+		this.GameState[2][3]="aaa";
+		this.GameState[3][4]="ab";
+
+		return this.GameState;
 	}
 	@Override
 	public List<String> contactServer(String userAddr) throws RemoteException {

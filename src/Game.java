@@ -87,9 +87,6 @@ public class Game {
 
     private static void waitUserServerStart (String addr) {
         try {
-//            int port = Integer.parseInt(addr.split(":")[1]);
-//            Registry registry = LocateRegistry.getRegistry(port);
-//            GameService otherPlayerStub = (GameService) registry.lookup("rmi://" + addr + "/game");
             GameService otherPlayerStub = getGameService(addr);
             if (otherPlayerStub.isActive()) {
                 return;
@@ -111,13 +108,22 @@ public class Game {
 
         String server = serverList[0];
         GameService serverStub = getGameService(server);
+        GameService userStub = getGameService(userAddr);
 
         List<String> newState = serverStub.contactServer(userAddr);
-        serverStub.makeMove(movement);
+        String[][] newGameState = serverStub.makeMove(movement);
+        userStub.updateGui(newGameState);
 
         System.out.println("You have get new contact history list after your movement\n");
-        for (String history : newState) {
-            System.out.println(history);
+        for (String[] row: newGameState) {
+            for(String item: row) {
+                if (null == item) {
+                    System.out.print("   ");
+                } else {
+                    System.out.print(item);
+                }
+            }
+            System.out.println();
         }
     }
 
@@ -226,9 +232,11 @@ public class Game {
                 Scanner reader = new Scanner(System.in);
                 int step = reader.nextInt();
                 try {
-                     makeMovement(step, myAddr);
+                    makeMovement(step, myAddr);
                 }
-                catch (Exception ex){System.out.println(ex.toString());}
+                catch (Exception ex){
+                    System.out.println(ex.toString());
+                }
             }
 
         } catch (Exception e) {
