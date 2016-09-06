@@ -29,7 +29,7 @@ public class Game {
                     int port = Integer.parseInt(otherPlayerAddr.split(":")[1]);
                     Registry registry = LocateRegistry.getRegistry("127.0.0.1",port);
                     GameService otherPlayerStub = (GameService) registry.lookup("rmi://" + otherPlayerAddr + "/game");
-                    if (otherPlayerStub.isActive()) {
+                    if (null != otherPlayerStub.initContact(myAddr)) {
                         continue;
                     }
                 } catch (ConnectException e) {
@@ -106,6 +106,9 @@ public class Game {
     }
 
     private static void makeMovement(int movement, String userAddr) throws Exception {
+        //Check server status and update
+        checkServer(userAddr);
+
         String server = serverList[0];
         GameService serverStub = getGameService(server);
 
@@ -137,7 +140,35 @@ public class Game {
             System.out.println(ex.getStackTrace());
             throw ex;
         }
+    }
 
+    /**
+     * Each time before update game state, try to test if main/backup server is active
+     * @throws Exception
+     */
+    private static void checkServer(String myAddr) throws Exception{
+        //only check if server list has 2 value
+        if(null != serverList[1]) {
+            String mainServer = serverList[0];
+            String backupServer =serverList[1];
+            try {
+                GameService mainStub = getGameService(mainServer);
+            } catch (Exception e) {
+                GameService backupStub = getGameService(backupServer);
+                GameService myStub = getGameService(myAddr);
+                serverList = backupStub.updateServerList(true, serverList);
+                myStub.updateServerList(serverList);
+            }
+
+            try {
+                GameService backupStub = getGameService(backupServer);
+            } catch (Exception e) {
+                GameService mainStub = getGameService(mainServer);
+                GameService myStub = getGameService(myAddr);
+                serverList = mainStub.updateServerList(false, serverList);
+                myStub.updateServerList(serverList);
+            }
+        }
     }
 
     public static void main(String[] args) {
@@ -173,6 +204,7 @@ public class Game {
 
             //get the player list from tracker
             List<String> playerList = trackerStub.addPlayer(playerID, playerIP, playerPort);
+
             //update the player list (remove dead and add myself)
             updatePlayerList(playerList, myAddr, trackerStub);
 
@@ -181,6 +213,9 @@ public class Game {
             //get this game client server
             GameService serverService = getServerList(playerList, playerIP, playerPort, playerID);
             GameService myService = getGameService(myAddr);
+
+            //update player list for user
+            myService.setUserList(playerList);
             //get updated game state
             myService.updateGameState(serverService.getGameState());
 

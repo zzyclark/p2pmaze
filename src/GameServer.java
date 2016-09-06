@@ -1,3 +1,5 @@
+import java.rmi.ConnectException;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -46,6 +48,35 @@ public class GameServer implements GameService {
 		//for (int i = 0; i < gameState.length; i++)
 		//	this.GameState[i] = Arrays.copyOf(gameState[i], gameState[i].length);
 		GameState = gameState;
+	}
+
+	@Override
+	public String[] updateServerList(Boolean isMain, String[] oldList) throws RemoteException {
+		if (isMain && oldList[0].equals(this.serverList[0])) {
+			//Main server down, backup server change to main server
+			this.serverList[0] = this.serverList[1];
+			changeServer();
+		} else if (isMain) {
+			//Server list already changed, user may request new server list
+			return this.serverList;
+		} else {
+			//Backup server down, random pick user to be backup server
+			changeServer();
+			return this.serverList;
+		}
+		return this.serverList;
+	}
+
+	@Override
+	public void setUserList(List<String> userList) throws RemoteException {
+		this.playerList = userList;
+	}
+
+	@Override
+	public String initContact(String myAddr) throws RemoteException {
+		//new user in, add user to list
+		this.playerList.add(myAddr);
+		return "Last Update timestamp";
 	}
 
 	@Override
@@ -124,6 +155,7 @@ public class GameServer implements GameService {
 		GameService stub = null;
 		Registry registry = null;
         String addr = playerID + '@' + playerIP + ':' + playerPort;
+		this.playerAddr = addr;
 		String bindName = "rmi://" + addr + "/game";
 		System.setProperty("java.rmi.server.hostname",playerIP);
 		try {
@@ -155,4 +187,26 @@ public class GameServer implements GameService {
 		}
 	}
 
+	private void changeServer() throws RemoteException {
+		//get an active user, and let it be backup server
+		Iterator<String> iterator = this.playerList.iterator();
+		while (iterator.hasNext()) {
+			String userAddr = iterator.next();
+			try {
+				Integer backupServerPort = Integer.parseInt(userAddr.substring(userAddr.indexOf(":") + 1));
+				Registry registry = LocateRegistry.getRegistry(backupServerPort);
+				GameService userStub = (GameService) registry.lookup("rmi://" + userAddr + "/game");
+
+				if (userStub.isActive() && !userAddr.equals(this.playerAddr)) {
+					//peak first active user to be backup server
+					this.serverList[1] = userAddr;
+					break;
+				}
+			} catch (ConnectException ce) {
+				iterator.remove();
+			} catch (NotBoundException ne) {
+				iterator.remove();
+			}
+		}
+	}
 }

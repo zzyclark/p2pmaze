@@ -16,5 +16,8 @@ public interface GameService extends Remote {
     void setServer(Boolean IsPrimary, Boolean IsBackup) throws RemoteException;
 	void updateBackupServer() throws Exception;
 	void updateGameState(String[][] gameState) throws RemoteException;
+	String[] updateServerList(Boolean isMain, String[] oldList) throws RemoteException;
+	void setUserList(List<String> userList) throws RemoteException;
+	String initContact(String myAddr) throws RemoteException;
 }
 
