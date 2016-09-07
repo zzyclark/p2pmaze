@@ -16,6 +16,7 @@ import java.util.zip.Deflater;
 public class GameServer implements GameService {
 	private String[] serverList = new String[2];
 	private List<String> userContactHistory = new ArrayList<String>();
+	private Randomizer randomizer;
 	private int xCord;
 	private int yCord;
 	private int score;
@@ -33,14 +34,15 @@ public class GameServer implements GameService {
 
 	public GameServer() {}
 	public GameServer(int n, int k, String id, String addr) {
+		Integer treasureNum = (n + k) / 2;
 	    this.N =n;
         this.K=k;
         this.ID = id;
-        this.GameState = new String[N][K];
+        this.GameState = new String[n][k];
         this.IsPrimaryServer = false;
         this.IsBackupServer = false;
         this.playerAddr = addr;
-
+		this.randomizer = new Randomizer(n, k, treasureNum, this.GameState);
 	}
 
 	@Override
@@ -85,9 +87,12 @@ public class GameServer implements GameService {
 
 	@Override
 	public void startNewGame() throws RemoteException {
-		Integer treasureNum = (this.N + this.K) / 2;
-		Randomizer randomizer = new Randomizer(this.N, this.K, treasureNum, this.GameState);
 		this.GameState = randomizer.loadInitTreasures();
+	}
+
+	@Override
+	public void newPlayerJoin(String userAddr) throws RemoteException {
+		this.GameState = randomizer.setRandomLocation(true, userAddr);
 	}
 
 	@Override
@@ -123,8 +128,6 @@ public class GameServer implements GameService {
 		if(m != 0 && m != 1 && m != 2 && m != 3 && m != 4 && m != 9){
 			System.out.println("Wrong step detected!");
 		}
-		this.GameState[2][3]="aaa";
-		this.GameState[3][4]="ab";
 
 		return this.GameState;
 	}

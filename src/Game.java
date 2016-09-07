@@ -222,9 +222,12 @@ public class Game {
 
             //update player list for user
             myService.setUserList(playerList);
-            //get updated game state
-            myService.updateGameState(serverService.getGameState());
 
+            //join game
+            serverService.newPlayerJoin(myAddr);
+            //get updated game state
+            String[][] test = serverService.getGameState();
+            myService.updateGameState(serverService.getGameState());
 
             //join the game
             myService.printGameState();

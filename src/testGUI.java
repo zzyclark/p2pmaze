@@ -76,7 +76,10 @@ public class testGUI extends JFrame {
             for (int j = 0; j < row.length; ++j) {
                 if (null == row[j]) {
                     table.getModel().setValueAt("O", i, j);
-                } else {
+                } else if (!row[j].equals("x")) {
+                    table.getModel().setValueAt(row[j].substring(0,2), i, j);
+                }
+                else {
                     table.getModel().setValueAt(row[j], i, j);
                 }
             }

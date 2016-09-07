@@ -21,5 +21,6 @@ public interface GameService extends Remote {
 	String initContact(String myAddr) throws RemoteException;
 	Boolean updateGui(String[][] gameState) throws RemoteException;
 	void startNewGame() throws RemoteException;
+	void newPlayerJoin(String userAddr) throws RemoteException;
 }
 
