@@ -14,9 +14,6 @@ import java.util.zip.Deflater;
 public class GameServer implements GameService {
 	private String[] serverList = new String[2];
 	private List<String> userContactHistory = new ArrayList<String>();
-	private int xCord;
-	private int yCord;
-	private int score;
 	public int N;
 	public int K;
 	public String[] players = {};
@@ -28,6 +25,8 @@ public class GameServer implements GameService {
 	public boolean IsPrimaryServer;
 	public boolean IsBackupServer;
 	public testGUI gui;
+	Hashtable<String, Integer> playerScores
+			= new Hashtable<String, Integer>();
 
 	public GameServer() {}
 	public GameServer(int n, int k, String id, String addr) {
@@ -104,13 +103,23 @@ public class GameServer implements GameService {
 	}
 
 	@Override
+	public void updateServerList(String[] newServerList) throws RemoteException {
+		serverList = newServerList;
+	}
+
+	@Override
 	public String[][] getGameState() throws RemoteException{
 		return GameState;
 	}
 
 	@Override
-	public void updateServerList(String[] newServerList) throws RemoteException {
-		serverList = newServerList;
+	public Hashtable<String,Integer> getPlayerScores() throws RemoteException{
+		return playerScores;
+	}
+
+	@Override
+	public void updatePlayerScores(Hashtable<String, Integer> scores) throws RemoteException{
+		playerScores = (Hashtable<String, Integer>)scores.clone();
 	}
 
 	@Override

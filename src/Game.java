@@ -14,6 +14,11 @@ import java.util.Scanner;
  */
 public class Game {
     private static String[] serverList = new String[2];
+    private static Integer xCord;
+    private static Integer yCord;
+    private static Integer score;
+    private static Integer N;
+    private static Integer K;
     public Game() {}
 
     private static void updatePlayerList(List<String> userList, String myAddr, TrackerService trackerStub) throws RemoteException {
@@ -107,8 +112,22 @@ public class Game {
 
     private static void makeMovement(int movement, String userAddr) throws Exception {
         String server = serverList[0];
+        //assume server is always live
         GameService serverStub = getGameService(server);
 
+        if(movement != 0 && movement != 1 && movement != 2 && movement != 3 && movement != 4 && movement != 9){
+            System.out.println("Wrong step detected!");
+            return;
+        }
+        if(movement == 1){
+            if(xCord == 0){
+                //at the boundary
+                System.out.println("Can't move towards west anymore!");
+                return;
+            }
+        }
+        int oldX = xCord;
+        int oldY = yCord;
         List<String> newState = serverStub.contactServer(userAddr);
         serverStub.makeMove(movement);
 
@@ -150,8 +169,8 @@ public class Game {
 
             Registry registry = LocateRegistry.getRegistry(ip,Integer.parseInt(port));
             TrackerService trackerStub = (TrackerService) registry.lookup("Tracker");
-            final int N = trackerStub.getN();
-            final int K = trackerStub.getK();
+            N = trackerStub.getN();
+            K = trackerStub.getK();
             final GameServer player = new GameServer();
 
             System.setProperty("java.rmi.server.hostname",playerIP);
@@ -184,8 +203,7 @@ public class Game {
             //get updated game state
             myService.updateGameState(serverService.getGameState());
 
-
-            //join the game
+            //show current game state
             myService.printGameState();
             while(true){
                 Scanner reader = new Scanner(System.in);

@@ -16,5 +16,7 @@ public interface GameService extends Remote {
     void setServer(Boolean IsPrimary, Boolean IsBackup) throws RemoteException;
 	void updateBackupServer() throws Exception;
 	void updateGameState(String[][] gameState) throws RemoteException;
+	Hashtable<String,Integer> getPlayerScores() throws RemoteException;
+	void updatePlayerScores(Hashtable<String, Integer> scores) throws RemoteException;
 }
 
