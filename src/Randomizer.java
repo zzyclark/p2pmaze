@@ -39,33 +39,17 @@ public class Randomizer {
         return grid;
     }
 
-    public String[][] setRandomLocation(Boolean isPlayer, String playerName) {
+    public Integer[] setRandomLocation(Boolean isPlayer, String playerName, String[][] stateGrid) {
         int randRow, randCol;
         while (true) {
             randRow = random.nextInt(ROWS);
             randCol = random.nextInt(COLUMNS);
 
-            if (grid[randRow][randCol] != null) {
+            if (stateGrid[randRow][randCol] != null) {
                 continue;
             }
-
-            if(isPlayer) {
-                grid[randRow][randCol] = playerName;
-            } else {
-                grid[randRow][randCol] = "x";
-            }
-            break;
+            Integer[] newPos = {randRow, randCol};
+            return newPos;
         }
-
-        return grid;
-    }
-
-    public static void main(String[] args) {
-        String[][] grid = new String[15][15];
-        Randomizer randomizer = new Randomizer(grid);
-
-        grid = randomizer.loadInitTreasures();
-        String[][] userGrid = randomizer.setRandomLocation(true, "ab");
-        return;
     }
 }

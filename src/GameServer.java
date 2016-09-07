@@ -80,7 +80,7 @@ public class GameServer implements GameService {
 	}
 
 	@Override
-	public Boolean updateGui(String[][] gameState) throws RemoteException {
+	public Boolean updateGui() throws RemoteException {
 		this.gui.updateState(this.GameState);
 		return true;
 	}
@@ -91,8 +91,22 @@ public class GameServer implements GameService {
 	}
 
 	@Override
-	public void newPlayerJoin(String userAddr) throws RemoteException {
-		this.GameState = randomizer.setRandomLocation(true, userAddr);
+	public Integer[] newPlayerJoin(String userAddr) throws RemoteException {
+		Integer[] newPos = randomizer.setRandomLocation(true, userAddr, this.GameState);
+		this.GameState[newPos[0]][newPos[1]] = userAddr;
+		return newPos;
+	}
+
+	@Override
+	public void updatePos(Integer[] pos) throws RemoteException {
+		this.xCord = pos[0];
+		this.yCord = pos[1];
+	}
+
+	@Override
+	public Integer[] getPos() throws RemoteException {
+		Integer[] myPos = {this.xCord, this.yCord};
+		return myPos;
 	}
 
 	@Override
@@ -124,12 +138,39 @@ public class GameServer implements GameService {
 	}
 
 	@Override
-	public String[][] makeMove(int m){
+	public Integer[] makeMove(int m, Integer[] myPos){
+		//In myPos, first is y axis value, second is x axis value
 		if(m != 0 && m != 1 && m != 2 && m != 3 && m != 4 && m != 9){
 			System.out.println("Wrong step detected!");
 		}
+		Integer[] oldPos = {myPos[0], myPos[1]};
 
-		return this.GameState;
+		Integer y = myPos[0];
+		Integer x = myPos[1];
+
+		if (m == 4) {
+			if (y - 1 >= 0 && (null == this.GameState[y-1][x] || "O".equals(this.GameState[y-1][x]) || "x".equals(this.GameState[y-1][x]))){
+				myPos[0] = myPos[0] - 1;
+			}
+			return updateUserPos(oldPos, myPos);
+		} else if (m == 3) {
+			if (x + 1 < this.K && (null == this.GameState[y][x+1] || "O".equals(this.GameState[y][x+1]) || "x".equals(this.GameState[y][x+1]))) {
+				myPos[1] = myPos[1] + 1;
+			}
+			return updateUserPos(oldPos, myPos);
+		} else if (m == 2) {
+			if (y + 1 < this.N && (null == this.GameState[y+1][x] || "O".equals(this.GameState[y+1][x]) || "x".equals(this.GameState[y+1][x]))){
+				myPos[0] = myPos[0] + 1;
+			}
+			return updateUserPos(oldPos, myPos);
+		} else if (m == 1) {
+			if (x - 1 >= 0 && (null == this.GameState[y][x-1] || "O".equals(this.GameState[y][x-1]) || "x".equals(this.GameState[y][x-1]))) {
+				myPos[1] = myPos[1] - 1;
+			}
+			return updateUserPos(oldPos, myPos);
+		} else {
+			return myPos;
+		}
 	}
 	@Override
 	public List<String> contactServer(String userAddr) throws RemoteException {
@@ -217,6 +258,22 @@ public class GameServer implements GameService {
 			} catch (NotBoundException ne) {
 				iterator.remove();
 			}
+		}
+	}
+
+	private Integer[] updateUserPos(Integer[] oldPos, Integer[] newPos) {
+		if (oldPos[0] == newPos[0] && oldPos[1] == newPos[1]) {
+			return oldPos;
+		} else {
+			String player = this.GameState[oldPos[0]][oldPos[1]];
+			Boolean isTreasure = "x".equals(this.GameState[newPos[0]][newPos[1]]);
+			this.GameState[oldPos[0]][oldPos[1]] = null;
+			this.GameState[newPos[0]][newPos[1]] = player;
+			if (isTreasure) {
+				Integer[] tPos = randomizer.setRandomLocation(false, "", this.GameState);
+				this.GameState[tPos[0]][tPos[1]] = "x";
+			}
+			return newPos;
 		}
 	}
 }

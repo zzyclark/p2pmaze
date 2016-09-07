@@ -110,9 +110,13 @@ public class Game {
         String server = serverList[0];
         GameService serverStub = getGameService(server);
         GameService userStub = getGameService(userAddr);
-        
-        String[][] newGameState = serverStub.makeMove(movement);
-        userStub.updateGui(newGameState);
+
+        Integer[] myPos = userStub.getPos();
+        myPos = serverStub.makeMove(movement, myPos);
+        userStub.updatePos(myPos);
+        String[][] newGameState = serverStub.getGameState();
+        userStub.updateGameState(newGameState);
+        userStub.updateGui();
 
         System.out.println("You have get new contact history list after your movement\n");
         for (String[] row: newGameState) {
@@ -224,9 +228,10 @@ public class Game {
             myService.setUserList(playerList);
 
             //join game
-            serverService.newPlayerJoin(myAddr);
+            Integer[] myPos = serverService.newPlayerJoin(myAddr);
+            myService.updatePos(myPos);
+
             //get updated game state
-            String[][] test = serverService.getGameState();
             myService.updateGameState(serverService.getGameState());
 
             //join the game
