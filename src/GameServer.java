@@ -81,8 +81,7 @@ public class GameServer implements GameService {
 
 	@Override
 	public Boolean updateGui(String[][] gameState) throws RemoteException {
-		this.GameState = gameState;
-		this.gui.update();
+		this.gui.updateState(this.GameState);
 		return true;
 	}
 
@@ -102,8 +101,6 @@ public class GameServer implements GameService {
 
 	@Override
 	public void printGameState(){
-		//gameState.add(new int[]{1,2,3});
-		//gameState.add(new int[]{1,2,3});
 		this.GameState[0][1] = "*";
 		this.GameState[1][2] = "x";
 		this.GameState[2][3]="ab";
@@ -114,8 +111,8 @@ public class GameServer implements GameService {
 			servername += "(Main Server)";
 		else if(IsBackupServer)
 			servername += "(Backup Server)";
-//		this.gui = new testGUI(servername, this.players, this.GameState, this.N, this.K);
-//		this.gui.setSize(500,500);
+		this.gui = new testGUI(servername, this.players, this.GameState, this.N, this.K);
+		this.gui.setSize(500,500);
 	}
 
 	@Override

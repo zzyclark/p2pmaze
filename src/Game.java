@@ -109,8 +109,7 @@ public class Game {
         String server = serverList[0];
         GameService serverStub = getGameService(server);
         GameService userStub = getGameService(userAddr);
-
-        List<String> newState = serverStub.contactServer(userAddr);
+        
         String[][] newGameState = serverStub.makeMove(movement);
         userStub.updateGui(newGameState);
 
