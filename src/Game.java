@@ -5,7 +5,6 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.Scanner;
 
@@ -52,7 +51,6 @@ public class Game {
     }
 
     private static GameService getServerList(List<String> userList, String userIp, Integer userPort, String userId) throws Exception {
-        //Assume main server never die
         //First player is the server
         //Second is the back up server
         String mainServer = userList.get(0);
@@ -64,9 +62,12 @@ public class Game {
 
         if (newServerList[0] == null && newServerList[1] == null) {
             //condition 1, no server in list
+            //Create new game state
             newServerList[0] = myAddr;
             mainServerStub = userStub;
             userStub.setServer(true,false);
+            //If new server exist, init new game state at main server
+            userStub.startNewGame();
             System.out.println("set primary server");
         } else if (newServerList[1] == null) {
             //condition 2, 1 main server in list

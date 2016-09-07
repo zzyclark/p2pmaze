@@ -74,7 +74,11 @@ public class testGUI extends JFrame {
         for (int i = 0; i < gameState.length; ++i) {
             String[] row = gameState[i];
             for (int j = 0; j < row.length; ++j) {
-                table.getModel().setValueAt(row[j], i, j);
+                if (null == row[j]) {
+                    table.getModel().setValueAt("O", i, j);
+                } else {
+                    table.getModel().setValueAt(row[j], i, j);
+                }
             }
         }
     }

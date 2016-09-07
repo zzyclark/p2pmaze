@@ -4,11 +4,18 @@ import java.util.Random;
  * Created by clark on 4/9/16.
  */
 public class Randomizer {
-    public static final int ROWS = 15;
-    public static final int COLUMNS = 15;
-    public static final int NO_OF_TREASURE = 60;
+    private Integer ROWS = 15;
+    private Integer COLUMNS = 15;
+    private Integer NO_OF_TREASURE = 60;
     private String[][] grid;
     public Random random = new Random();
+
+    public Randomizer(Integer ROWS, Integer COLUMNS, Integer NO_OF_TREASURE, String[][] grid) {
+        this.ROWS = ROWS;
+        this.COLUMNS = COLUMNS;
+        this.NO_OF_TREASURE = NO_OF_TREASURE;
+        this.grid = grid;
+    }
 
     public Randomizer(String[][] grid) {
         this.grid = grid;

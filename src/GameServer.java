@@ -45,8 +45,6 @@ public class GameServer implements GameService {
 
 	@Override
 	public void updateGameState(String[][] gameState) throws RemoteException {
-		//for (int i = 0; i < gameState.length; i++)
-		//	this.GameState[i] = Arrays.copyOf(gameState[i], gameState[i].length);
 		this.GameState = gameState;
 	}
 
@@ -86,6 +84,13 @@ public class GameServer implements GameService {
 	}
 
 	@Override
+	public void startNewGame() throws RemoteException {
+		Integer treasureNum = (this.N + this.K) / 2;
+		Randomizer randomizer = new Randomizer(this.N, this.K, treasureNum, this.GameState);
+		this.GameState = randomizer.loadInitTreasures();
+	}
+
+	@Override
 	public void updateBackupServer() throws Exception {
 		String backupServer = serverList[1];
 		Integer backupServerPort = Integer.parseInt(backupServer.substring(backupServer.indexOf(":") + 1));
@@ -101,9 +106,6 @@ public class GameServer implements GameService {
 
 	@Override
 	public void printGameState(){
-		this.GameState[0][1] = "*";
-		this.GameState[1][2] = "x";
-		this.GameState[2][3]="ab";
 		System.out.println("Current Game State:");
 		//print out game state
 		String servername = this.ID;
@@ -113,6 +115,7 @@ public class GameServer implements GameService {
 			servername += "(Backup Server)";
 		this.gui = new testGUI(servername, this.players, this.GameState, this.N, this.K);
 		this.gui.setSize(500,500);
+		this.gui.updateState(this.GameState);
 	}
 
 	@Override
@@ -127,7 +130,6 @@ public class GameServer implements GameService {
 	}
 	@Override
 	public List<String> contactServer(String userAddr) throws RemoteException {
-		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		Date currentTime = new Date();
 		String history = userAddr + " has contacted server at: " + currentTime;
 		userContactHistory.add(history);
@@ -151,7 +153,7 @@ public class GameServer implements GameService {
 
 	@Override
 	public void setServer(Boolean IsPrimary, Boolean IsBackup) throws RemoteException{
-		System.out.println("ser server");
+		System.out.println("set server");
 		IsPrimaryServer = IsPrimary;
 		IsBackupServer = IsBackup;
 	}
