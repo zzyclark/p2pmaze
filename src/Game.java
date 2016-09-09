@@ -117,6 +117,10 @@ public class Game {
         String[][] newGameState = serverStub.getGameState();
         userStub.updateGameState(newGameState);
         userStub.updateGui();
+        //Each time make move, update back up server
+        if (null != serverList[1]) {
+            userStub.updateBackupServer();
+        }
 
         System.out.println("You have get new contact history list after your movement\n");
         for (String[] row: newGameState) {
@@ -224,8 +228,12 @@ public class Game {
             GameService serverService = getServerList(playerList, playerIP, playerPort, playerID);
             GameService myService = getGameService(myAddr);
 
+            System.out.println("after my server start");
+
             //update player list for user
             myService.setUserList(playerList);
+
+            System.out.println("after set user list");
 
             //join game
             Integer[] myPos = serverService.newPlayerJoin(myAddr);
@@ -234,8 +242,14 @@ public class Game {
             //get updated game state
             myService.updateGameState(serverService.getGameState());
 
+            System.out.println("after update gamestate");
+
             //join the game
             myService.printGameState();
+
+            //initial refresh, in order to show the right info in window
+            //TODO: need to fix this later
+            makeMovement(0, myAddr);
             while(true){
                 Scanner reader = new Scanner(System.in);
                 int step = reader.nextInt();

@@ -45,7 +45,7 @@ public class Randomizer {
             randRow = random.nextInt(ROWS);
             randCol = random.nextInt(COLUMNS);
 
-            if (stateGrid[randRow][randCol] != null) {
+            if (stateGrid[randRow][randCol] != null && !stateGrid[randRow][randCol].equals("O")) {
                 continue;
             }
             Integer[] newPos = {randRow, randCol};

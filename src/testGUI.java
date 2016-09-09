@@ -1,3 +1,5 @@
+import com.sun.org.apache.bcel.internal.generic.LMUL;
+
 import javax.swing.*;
 import javax.swing.text.StringContent;
 import java.applet.Applet;
@@ -20,7 +22,8 @@ public class testGUI extends JFrame {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setVisible(true);
 
-        playerList = new JList(players);
+        DefaultListModel listModel = getUserList(gs);
+        playerList = new JList(listModel);
         DefaultListCellRenderer renderer =  (DefaultListCellRenderer)playerList.getCellRenderer();
         renderer.setHorizontalAlignment(JLabel.LEFT);
         panel1.add(playerList);
@@ -71,6 +74,9 @@ public class testGUI extends JFrame {
     }
 
     public void updateState(String[][] gameState) {
+        DefaultListModel lModel = (DefaultListModel)playerList.getModel();
+        lModel.removeAllElements();
+
         for (int i = 0; i < gameState.length; ++i) {
             String[] row = gameState[i];
             for (int j = 0; j < row.length; ++j) {
@@ -78,12 +84,26 @@ public class testGUI extends JFrame {
                     table.getModel().setValueAt("O", i, j);
                 } else if (!row[j].equals("x")) {
                     table.getModel().setValueAt(row[j].substring(0,2), i, j);
+                    lModel.addElement(row[j].substring(0,2));
                 }
                 else {
                     table.getModel().setValueAt(row[j], i, j);
                 }
             }
         }
+    }
+
+    private DefaultListModel getUserList (String[][] gameState) {
+        DefaultListModel lModel = new DefaultListModel();
+        for (int i = 0; i < gameState.length; ++i) {
+            String[] row = gameState[i];
+            for (int j = 0; j < row.length; ++j) {
+                if (null != row[j] && !row[j].equals("x")) {
+                    lModel.addElement(row[j].substring(0, 2));
+                }
+            }
+        }
+        return lModel;
     }
 }
 

@@ -115,7 +115,7 @@ public class GameServer implements GameService {
 		Integer backupServerPort = Integer.parseInt(backupServer.substring(backupServer.indexOf(":") + 1));
 		Registry registry = LocateRegistry.getRegistry(backupServerPort);
 		GameService backupServerStub = (GameService) registry.lookup("rmi://" + backupServer + "/game");
-		backupServerStub.updateGameState(GameState);
+		backupServerStub.updateGameState(this.GameState);
 	}
 
 	@Override
@@ -134,7 +134,6 @@ public class GameServer implements GameService {
 			servername += "(Backup Server)";
 		this.gui = new testGUI(servername, this.players, this.GameState, this.N, this.K);
 		this.gui.setSize(500,500);
-		this.gui.updateState(this.GameState);
 	}
 
 	@Override
