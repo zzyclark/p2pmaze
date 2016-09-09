@@ -1,3 +1,5 @@
+import java.rmi.ConnectException;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -44,7 +46,43 @@ public class GameServer implements GameService {
 	public void updateGameState(String[][] gameState) throws RemoteException {
 		//for (int i = 0; i < gameState.length; i++)
 		//	this.GameState[i] = Arrays.copyOf(gameState[i], gameState[i].length);
-		GameState = gameState;
+		this.GameState = gameState;
+	}
+
+	@Override
+	public String[] updateServerList(Boolean isMain, String[] oldList) throws RemoteException {
+		if (isMain && oldList[0].equals(this.serverList[0])) {
+			//Main server down, backup server change to main server
+			this.serverList[0] = this.serverList[1];
+			changeServer();
+		} else if (isMain) {
+			//Server list already changed, user may request new server list
+			return this.serverList;
+		} else {
+			//Backup server down, random pick user to be backup server
+			changeServer();
+			return this.serverList;
+		}
+		return this.serverList;
+	}
+
+	@Override
+	public void setUserList(List<String> userList) throws RemoteException {
+		this.playerList = userList;
+	}
+
+	@Override
+	public String initContact(String myAddr) throws RemoteException {
+		//new user in, add user to list
+		this.playerList.add(myAddr);
+		return "Last Update timestamp";
+	}
+
+	@Override
+	public Boolean updateGui(String[][] gameState) throws RemoteException {
+		this.GameState = gameState;
+		this.gui.update();
+		return true;
 	}
 
 	@Override
@@ -65,9 +103,9 @@ public class GameServer implements GameService {
 	public void printGameState(){
 		//gameState.add(new int[]{1,2,3});
 		//gameState.add(new int[]{1,2,3});
-		GameState[0][1] = "*";
-		GameState[1][2] = "x";
-		GameState[2][3]="ab";
+		this.GameState[0][1] = "*";
+		this.GameState[1][2] = "x";
+		this.GameState[2][3]="ab";
 		System.out.println("Current Game State:");
 		//print out game state
 		String servername = this.ID;
@@ -75,18 +113,19 @@ public class GameServer implements GameService {
 			servername += "(Main Server)";
 		else if(IsBackupServer)
 			servername += "(Backup Server)";
-		gui = new testGUI(servername, players, GameState, N, K);
-		gui.setSize(500,500);
+//		this.gui = new testGUI(servername, this.players, this.GameState, this.N, this.K);
+//		this.gui.setSize(500,500);
 	}
 
 	@Override
-	public void makeMove(int m){
+	public String[][] makeMove(int m){
 		if(m != 0 && m != 1 && m != 2 && m != 3 && m != 4 && m != 9){
 			System.out.println("Wrong step detected!");
 		}
-		GameState[2][3]="aaa";
-		GameState[3][4]="ab";
-		gui.update();
+		this.GameState[2][3]="aaa";
+		this.GameState[3][4]="ab";
+
+		return this.GameState;
 	}
 	@Override
 	public List<String> contactServer(String userAddr) throws RemoteException {
@@ -133,6 +172,7 @@ public class GameServer implements GameService {
 		GameService stub = null;
 		Registry registry = null;
         String addr = playerID + '@' + playerIP + ':' + playerPort;
+		this.playerAddr = addr;
 		String bindName = "rmi://" + addr + "/game";
 		System.setProperty("java.rmi.server.hostname",playerIP);
 		try {
@@ -164,4 +204,26 @@ public class GameServer implements GameService {
 		}
 	}
 
+	private void changeServer() throws RemoteException {
+		//get an active user, and let it be backup server
+		Iterator<String> iterator = this.playerList.iterator();
+		while (iterator.hasNext()) {
+			String userAddr = iterator.next();
+			try {
+				Integer backupServerPort = Integer.parseInt(userAddr.substring(userAddr.indexOf(":") + 1));
+				Registry registry = LocateRegistry.getRegistry(backupServerPort);
+				GameService userStub = (GameService) registry.lookup("rmi://" + userAddr + "/game");
+
+				if (userStub.isActive() && !userAddr.equals(this.playerAddr)) {
+					//peak first active user to be backup server
+					this.serverList[1] = userAddr;
+					break;
+				}
+			} catch (ConnectException ce) {
+				iterator.remove();
+			} catch (NotBoundException ne) {
+				iterator.remove();
+			}
+		}
+	}
 }
