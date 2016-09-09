@@ -69,9 +69,12 @@ public class Game {
 
         if (newServerList[0] == null && newServerList[1] == null) {
             //condition 1, no server in list
+            //Create new game state
             newServerList[0] = myAddr;
             mainServerStub = userStub;
             userStub.setServer(true,false);
+            //If new server exist, init new game state at main server
+            userStub.startNewGame();
             System.out.println("set primary server");
         } else if (newServerList[1] == null) {
             //condition 2, 1 main server in list
@@ -206,8 +209,8 @@ public class Game {
 
             Registry registry = LocateRegistry.getRegistry(ip,Integer.parseInt(port));
             TrackerService trackerStub = (TrackerService) registry.lookup("Tracker");
-            N = trackerStub.getN();
-            K = trackerStub.getK();
+            final int N = trackerStub.getN();
+            final int K = trackerStub.getK();
             final GameServer player = new GameServer();
 
             System.setProperty("java.rmi.server.hostname",playerIP);
@@ -241,10 +244,16 @@ public class Game {
 
             //update player list for user
             myService.setUserList(playerList);
+
+            //join game
+            Integer[] myPos = serverService.newPlayerJoin(myAddr);
+            myService.updatePos(myPos);
+
             //get updated game state
             myService.updateGameState(serverService.getGameState());
 
-            //show current game state
+
+            //join the game
             myService.printGameState();
             while(true){
                 Scanner reader = new Scanner(System.in);

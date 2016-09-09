@@ -69,5 +69,21 @@ public class testGUI extends JFrame {
         table.repaint();
         playerList.repaint();
     }
+
+    public void updateState(String[][] gameState) {
+        for (int i = 0; i < gameState.length; ++i) {
+            String[] row = gameState[i];
+            for (int j = 0; j < row.length; ++j) {
+                if (null == row[j] || "O".equals(row[j])) {
+                    table.getModel().setValueAt("O", i, j);
+                } else if (!row[j].equals("x")) {
+                    table.getModel().setValueAt(row[j].substring(0,2), i, j);
+                }
+                else {
+                    table.getModel().setValueAt(row[j], i, j);
+                }
+            }
+        }
+    }
 }
 

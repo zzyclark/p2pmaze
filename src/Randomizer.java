@@ -4,11 +4,18 @@ import java.util.Random;
  * Created by clark on 4/9/16.
  */
 public class Randomizer {
-    public static final int ROWS = 15;
-    public static final int COLUMNS = 15;
-    public static final int NO_OF_TREASURE = 60;
+    private Integer ROWS = 15;
+    private Integer COLUMNS = 15;
+    private Integer NO_OF_TREASURE = 60;
     private String[][] grid;
     public Random random = new Random();
+
+    public Randomizer(Integer ROWS, Integer COLUMNS, Integer NO_OF_TREASURE, String[][] grid) {
+        this.ROWS = ROWS;
+        this.COLUMNS = COLUMNS;
+        this.NO_OF_TREASURE = NO_OF_TREASURE;
+        this.grid = grid;
+    }
 
     public Randomizer(String[][] grid) {
         this.grid = grid;
@@ -32,33 +39,17 @@ public class Randomizer {
         return grid;
     }
 
-    public String[][] setRandomLocation(Boolean isPlayer, String playerName) {
+    public Integer[] setRandomLocation(Boolean isPlayer, String playerName, String[][] stateGrid) {
         int randRow, randCol;
         while (true) {
             randRow = random.nextInt(ROWS);
             randCol = random.nextInt(COLUMNS);
 
-            if (grid[randRow][randCol] != null) {
+            if (stateGrid[randRow][randCol] != null) {
                 continue;
             }
-
-            if(isPlayer) {
-                grid[randRow][randCol] = playerName;
-            } else {
-                grid[randRow][randCol] = "x";
-            }
-            break;
+            Integer[] newPos = {randRow, randCol};
+            return newPos;
         }
-
-        return grid;
-    }
-
-    public static void main(String[] args) {
-        String[][] grid = new String[15][15];
-        Randomizer randomizer = new Randomizer(grid);
-
-        grid = randomizer.loadInitTreasures();
-        String[][] userGrid = randomizer.setRandomLocation(true, "ab");
-        return;
     }
 }
