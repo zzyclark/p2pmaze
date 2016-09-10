@@ -3,6 +3,7 @@ import java.rmi.RemoteException;
 import java.rmi.NotBoundException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -47,6 +48,33 @@ public class Game {
 
         if (oldLen != userList.size()) {
             trackerStub.updatePlayerList(userList);
+        }
+    }
+
+    private static List<String> getInactiveUserlist(String[][] gameState) {
+        List<String> allUserList = new ArrayList<String>();
+        for (int i = 0; i < gameState.length; ++i) {
+            String[] row = gameState[i];
+            for (int j = 0; j < row.length; ++j) {
+                if (null != row[j] && !row[j].equals("x")) {
+                    allUserList.add(row[j]);
+                }
+            }
+        }
+
+        List<String> inactiveUserList = new ArrayList<String>();
+        for (String userAddr : allUserList) {
+            try {
+                GameService otherUser = getGameService(userAddr);
+            } catch (Exception e) {
+                inactiveUserList.add(userAddr);
+            }
+        }
+
+        if (0 != inactiveUserList.size()) {
+            return inactiveUserList;
+        } else {
+            return null;
         }
     }
 
@@ -112,6 +140,15 @@ public class Game {
         GameService userStub = getGameService(userAddr);
 
         Integer[] myPos = userStub.getPos();
+
+        //Call server to remove those inactive user
+        String[][] beforeMovementState = serverStub.getGameState();
+        List<String> inactiveList = getInactiveUserlist(beforeMovementState);
+        if (null != inactiveList) {
+            serverStub.removeInactiveUser(inactiveList);
+        }
+
+        //Make movement
         myPos = serverStub.makeMove(movement, myPos);
         userStub.updatePos(myPos);
         String[][] newGameState = serverStub.getGameState();

@@ -110,6 +110,24 @@ public class GameServer implements GameService {
 	}
 
 	@Override
+	public void removeInactiveUser(List<String> inactiveUserList) throws RemoteException {
+		OuterLoop:
+		for (int i = 0; i < this.GameState.length; ++i) {
+			String[] row = this.GameState[i];
+			for (int j = 0; j < row.length; ++j) {
+				if (null != row[j]) {
+					for (String inactiveUser : inactiveUserList) {
+						if (inactiveUser.equals(row[j])) {
+							this.GameState[i][j] = null;
+							continue OuterLoop;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	@Override
 	public void updateBackupServer() throws Exception {
 		String backupServer = serverList[1];
 		Integer backupServerPort = Integer.parseInt(backupServer.substring(backupServer.indexOf(":") + 1));
