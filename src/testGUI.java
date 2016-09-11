@@ -77,20 +77,37 @@ public class testGUI extends JFrame {
         playerList.repaint();
     }
 
-//    public void updateState(String[][] gameState) {
-//        for (int i = 0; i < gameState.length; ++i) {
-//            String[] row = gameState[i];
-//            for (int j = 0; j < row.length; ++j) {
-//                if (null == row[j] || "O".equals(row[j])) {
-//                    table.getModel().setValueAt("O", i, j);
-//                } else if (!row[j].equals("x")) {
-//                    table.getModel().setValueAt(row[j].substring(0,2), i, j);
-//                }
-//                else {
-//                    table.getModel().setValueAt(row[j], i, j);
-//                }
-//            }
-//        }
-//    }
+    public void updateState(String[][] gameState) {
+        DefaultListModel lModel = (DefaultListModel)playerList.getModel();
+        lModel.removeAllElements();
+
+        for (int i = 0; i < gameState.length; ++i) {
+            String[] row = gameState[i];
+            for (int j = 0; j < row.length; ++j) {
+                if (null == row[j] || "O".equals(row[j])) {
+                    table.getModel().setValueAt("O", i, j);
+                } else if (!row[j].equals("x")) {
+                    table.getModel().setValueAt(row[j].substring(0,2), i, j);
+                    lModel.addElement(row[j].substring(0,2));
+                }
+                else {
+                    table.getModel().setValueAt(row[j], i, j);
+                }
+            }
+        }
+    }
+
+    private DefaultListModel getUserList (String[][] gameState) {
+        DefaultListModel lModel = new DefaultListModel();
+        for (int i = 0; i < gameState.length; ++i) {
+            String[] row = gameState[i];
+            for (int j = 0; j < row.length; ++j) {
+                if (null != row[j] && !row[j].equals("x")) {
+                    lModel.addElement(row[j].substring(0, 2));
+                }
+            }
+        }
+        return lModel;
+    }
 }
 

@@ -26,5 +26,9 @@ public interface GameService extends Remote {
 	Integer[] newPlayerJoin(String userAddr, String PlayerID) throws RemoteException;
 	void addScore() throws RemoteException;
 	void playerListChanged(List<String> playerList) throws RemoteException;
+	Integer[] newPlayerJoin(String userAddr) throws RemoteException;
+	void updatePos(Integer[] pos) throws RemoteException;
+	Integer[] getPos() throws RemoteException;
+	void removeInactiveUser(List<String> inactiveUserList) throws RemoteException;
 }
 

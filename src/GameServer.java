@@ -42,7 +42,7 @@ public class GameServer implements GameService {
         this.IsPrimaryServer = false;
         this.IsBackupServer = false;
         this.playerAddr = addr;
-
+		this.randomizer = new Randomizer(n, k, treasureNum, this.GameState);
 	}
 
 	@Override
@@ -110,6 +110,18 @@ public class GameServer implements GameService {
 			System.out.println(ex.getMessage());
 		}
 		return newPos;
+	}
+
+	@Override
+	public void updatePos(Integer[] pos) throws RemoteException {
+		this.xCord = pos[0];
+		this.yCord = pos[1];
+	}
+
+	@Override
+	public Integer[] getPos() throws RemoteException {
+		Integer[] myPos = {this.xCord, this.yCord};
+		return myPos;
 	}
 
 	@Override
