@@ -54,17 +54,14 @@ public class GameServer implements GameService {
 	public String[] updateServerList(Boolean isMain, String[] oldList) throws RemoteException {
 		if (isMain && oldList[0].equals(this.serverList[0])) {
 			//Main server down, backup server change to main server
-			this.serverList[0] = this.serverList[1];
-			changeServer();
+			return changeServer(true);
 		} else if (isMain) {
 			//Server list already changed, user may request new server list
 			return this.serverList;
 		} else {
 			//Backup server down, random pick user to be backup server
-			changeServer();
-			return this.serverList;
+			return changeServer(false);
 		}
-		return this.serverList;
 	}
 
 	@Override
@@ -255,11 +252,20 @@ public class GameServer implements GameService {
 		}
 	}
 
-	private void changeServer() throws RemoteException {
+	private String[] changeServer(Boolean changeMain) throws RemoteException {
+		String[] newList = new String[2];
+		if (changeMain) {
+			newList[0] = this.serverList[1];
+		} else {
+			newList[0] = this.serverList[0];
+		}
+
 		//get an active user, and let it be backup server
 		Iterator<String> iterator = this.playerList.iterator();
+		System.out.println("Change back up server.");
 		while (iterator.hasNext()) {
 			String userAddr = iterator.next();
+			System.out.println("Back up server candidate: " + userAddr);
 			try {
 				Integer backupServerPort = Integer.parseInt(userAddr.substring(userAddr.indexOf(":") + 1));
 				Registry registry = LocateRegistry.getRegistry(backupServerPort);
@@ -267,8 +273,10 @@ public class GameServer implements GameService {
 
 				if (userStub.isActive() && !userAddr.equals(this.playerAddr)) {
 					//peak first active user to be backup server
-					this.serverList[1] = userAddr;
-					break;
+					newList[1] = userAddr;
+					this.serverList = newList;
+					System.out.println("Back up server change to: " + this.serverList[1]);
+					return this.serverList;
 				}
 			} catch (ConnectException ce) {
 				iterator.remove();
@@ -276,6 +284,9 @@ public class GameServer implements GameService {
 				iterator.remove();
 			}
 		}
+		System.out.println("Back up server change to: " + this.serverList[1]);
+		this.serverList = newList;
+		return this.serverList;
 	}
 
 	private Integer[] updateUserPos(Integer[] oldPos, Integer[] newPos) {
