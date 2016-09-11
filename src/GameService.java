@@ -8,7 +8,7 @@ import java.util.*;
 public interface GameService extends Remote {
 	Boolean isActive() throws RemoteException;
 	void printGameState() throws RemoteException;
-	void makeMove(int m) throws RemoteException;
+	String[][] makeMove(int m, int oldX, int oldY, int newX, int newY, GameService Player) throws Exception;
 	List<String> contactServer(String userAddr) throws RemoteException;
 	String[] getServerList() throws RemoteException;
 	String[][] getGameState() throws RemoteException;
@@ -23,8 +23,8 @@ public interface GameService extends Remote {
 	String initContact(String myAddr) throws RemoteException;
 	Boolean updateGui() throws RemoteException;
 	void startNewGame() throws RemoteException;
-	Integer[] newPlayerJoin(String userAddr) throws RemoteException;
-	void updatePos(Integer[] pos) throws RemoteException;
-	Integer[] getPos() throws RemoteException;
+	Integer[] newPlayerJoin(String userAddr, String PlayerID) throws RemoteException;
+	void addScore() throws RemoteException;
+	void playerListChanged(List<String> playerList) throws RemoteException;
 }
 

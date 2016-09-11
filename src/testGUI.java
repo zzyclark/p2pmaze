@@ -3,6 +3,7 @@ import javax.swing.text.StringContent;
 import java.applet.Applet;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import javax.swing.JLabel;
 
 /**
@@ -12,15 +13,21 @@ public class testGUI extends JFrame {
     private JPanel panel1;
     private JTable table;
     private JList playerList;
+    public DefaultListModel<String> players;
     //private JTable table1;
 
-    public testGUI(String title, String[] players, String[][] gs, int N, int K){
+    public testGUI(String title, Hashtable<String, Integer> playerScores, String[][] gs, int N, int K){
         super(title);
         setContentPane(panel1);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setVisible(true);
 
-        playerList = new JList(players);
+        this.players = new DefaultListModel<>();
+        for(String key : playerScores.keySet()){
+            this.players.addElement(key + ": " + playerScores.get(key));
+        }
+
+        playerList = new JList(this.players);
         DefaultListCellRenderer renderer =  (DefaultListCellRenderer)playerList.getCellRenderer();
         renderer.setHorizontalAlignment(JLabel.LEFT);
         panel1.add(playerList);
@@ -70,20 +77,20 @@ public class testGUI extends JFrame {
         playerList.repaint();
     }
 
-    public void updateState(String[][] gameState) {
-        for (int i = 0; i < gameState.length; ++i) {
-            String[] row = gameState[i];
-            for (int j = 0; j < row.length; ++j) {
-                if (null == row[j] || "O".equals(row[j])) {
-                    table.getModel().setValueAt("O", i, j);
-                } else if (!row[j].equals("x")) {
-                    table.getModel().setValueAt(row[j].substring(0,2), i, j);
-                }
-                else {
-                    table.getModel().setValueAt(row[j], i, j);
-                }
-            }
-        }
-    }
+//    public void updateState(String[][] gameState) {
+//        for (int i = 0; i < gameState.length; ++i) {
+//            String[] row = gameState[i];
+//            for (int j = 0; j < row.length; ++j) {
+//                if (null == row[j] || "O".equals(row[j])) {
+//                    table.getModel().setValueAt("O", i, j);
+//                } else if (!row[j].equals("x")) {
+//                    table.getModel().setValueAt(row[j].substring(0,2), i, j);
+//                }
+//                else {
+//                    table.getModel().setValueAt(row[j], i, j);
+//                }
+//            }
+//        }
+//    }
 }
 

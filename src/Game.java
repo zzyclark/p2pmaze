@@ -16,14 +16,14 @@ public class Game {
     private static String[] serverList = new String[2];
     private static Integer xCord;
     private static Integer yCord;
-    private static Integer score;
     private static Integer N;
     private static Integer K;
     public Game() {}
 
-    private static void updatePlayerList(List<String> userList, String myAddr, TrackerService trackerStub) throws RemoteException {
+    private static boolean updatePlayerList(List<String> userList, String myAddr, TrackerService trackerStub) throws RemoteException {
         Iterator<String> iterator = userList.iterator();
         int oldLen = userList.size();
+        boolean listChanged = false;
 
         while (iterator.hasNext()) {
             String otherPlayerAddr = iterator.next();
@@ -53,7 +53,9 @@ public class Game {
 
         if (oldLen != userList.size()) {
             trackerStub.updatePlayerList(userList);
+            listChanged = true;
         }
+        return listChanged;
     }
 
     private static GameService getServerList(List<String> userList, String userIp, Integer userPort, String userId) throws Exception {
@@ -123,18 +125,49 @@ public class Game {
             System.out.println("Wrong step detected!");
             return;
         }
+        int oldX = xCord;
+        int oldY = yCord;
         if(movement == 1){
             if(xCord == 0){
                 //at the boundary
                 System.out.println("Can't move towards west anymore!");
                 return;
             }
+            xCord --;
         }
-        int oldX = xCord;
-        int oldY = yCord;
+        else if(movement == 2){
+            if(yCord==0) {
+                //at the boundary
+                System.out.println("Can't move towards south anymore!");
+                return;
+            }
+            yCord--;
+        }
+        else if(movement == 3){
+            if(xCord==N) {
+                //at the boundary
+                System.out.println("Can't move towards east anymore!");
+                return;
+            }
+            xCord++;
+        }
+        else if(movement == 4){
+            if(yCord==N) {
+                //at the boundary
+                System.out.println("Can't move towards south anymore!");
+                return;
+            }
+            yCord++;
+        }
+        else if(movement == 0){
+            //quit this game
+
+        }
         List<String> newState = serverStub.contactServer(userAddr);
-        String[][] newGameState = serverStub.makeMove(movement);
-        userStub.updateGui(newGameState);
+        String[][] newGameState = serverStub.makeMove(movement, oldX, oldY,xCord,yCord, userStub);
+        userStub.updateGameState(newGameState);
+        userStub.updatePlayerScores(serverStub.getPlayerScores());
+        userStub.updateGui();
 
         System.out.println("You have get new contact history list after your movement\n");
         for (String[] row: newGameState) {
@@ -234,7 +267,7 @@ public class Game {
             List<String> playerList = trackerStub.addPlayer(playerID, playerIP, playerPort);
 
             //update the player list (remove dead and add myself)
-            updatePlayerList(playerList, myAddr, trackerStub);
+            boolean listChanged = updatePlayerList(playerList, myAddr, trackerStub);
 
             System.out.println(myAddr + " joined the game");
 
@@ -242,15 +275,23 @@ public class Game {
             GameService serverService = getServerList(playerList, playerIP, playerPort, playerID);
             GameService myService = getGameService(myAddr);
 
+            //update server about the player list if changed
+            if(listChanged){
+                serverService.playerListChanged(playerList);
+            }
+
             //update player list for user
             myService.setUserList(playerList);
 
             //join game
-            Integer[] myPos = serverService.newPlayerJoin(myAddr);
-            myService.updatePos(myPos);
+            Integer[] myPos = serverService.newPlayerJoin(myAddr, playerID);
+            //myService.updatePos(myPos);
+            xCord= myPos[0];
+            yCord = myPos[1];
 
             //get updated game state
             myService.updateGameState(serverService.getGameState());
+            myService.updatePlayerScores(serverService.getPlayerScores());
 
 
             //join the game
