@@ -16,8 +16,9 @@ public class Game {
     private static String[] serverList = new String[2];
     public Game() {}
 
-    private static void updatePlayerList(List<String> userList, String myAddr, TrackerService trackerStub) throws RemoteException {
+    private static boolean updatePlayerList(List<String> userList, String myAddr, TrackerService trackerStub) throws RemoteException {
         Iterator<String> iterator = userList.iterator();
+        Boolean playerLeft = false;
         int oldLen = userList.size();
 
         while (iterator.hasNext()) {
@@ -34,13 +35,16 @@ public class Game {
                     }
                 } catch (ConnectException e) {
                     System.out.println("Cant connect to player "+otherPlayerAddr+" "+e.getMessage());
+                    playerLeft = true;
                     iterator.remove();
                 }
                 catch (NotBoundException e){
                     System.out.println("Player address not bount "+otherPlayerAddr);
+                    playerLeft = true;
                     iterator.remove();
                 }
                 catch (Exception e) {
+                    playerLeft = true;
                     e.printStackTrace();
                 }
             }
@@ -49,6 +53,7 @@ public class Game {
         if (oldLen != userList.size()) {
             trackerStub.updatePlayerList(userList);
         }
+        return playerLeft;
     }
 
     private static List<String> getInactiveUserlist(String[][] gameState) {
@@ -142,17 +147,18 @@ public class Game {
         Integer[] myPos = userStub.getPos();
 
         //Call server to remove those inactive user
-        String[][] beforeMovementState = serverStub.getGameState();
-        List<String> inactiveList = getInactiveUserlist(beforeMovementState);
-        if (null != inactiveList) {
-            serverStub.removeInactiveUser(inactiveList);
-        }
+//        String[][] beforeMovementState = serverStub.getGameState();
+//        List<String> inactiveList = getInactiveUserlist(beforeMovementState);
+//        if (null != inactiveList) {
+//            serverStub.removeInactiveUser(inactiveList);
+//        }
 
         //Make movement
-        myPos = serverStub.makeMove(movement, myPos);
+        myPos = serverStub.makeMove(movement, myPos, userAddr);
         userStub.updatePos(myPos);
         String[][] newGameState = serverStub.getGameState();
         userStub.updateGameState(newGameState);
+        userStub.updatePlayerScores(serverStub.getPlayerScores());
         userStub.updateGui();
         //Each time make move, update back up server
         if (null != serverList[1]) {
@@ -257,13 +263,18 @@ public class Game {
             List<String> playerList = trackerStub.addPlayer(playerID, playerIP, playerPort);
 
             //update the player list (remove dead and add myself)
-            updatePlayerList(playerList, myAddr, trackerStub);
+            boolean playerLeft = updatePlayerList(playerList, myAddr, trackerStub);
 
             System.out.println(myAddr + " joined the game");
 
             //get this game client server
             GameService serverService = getServerList(playerList, playerIP, playerPort, playerID);
             GameService myService = getGameService(myAddr);
+
+            //update server about the player list if changed
+            if(playerLeft){
+                serverService.playerListChanged(playerList);
+            }
 
             System.out.println("after my server start");
 
@@ -278,6 +289,7 @@ public class Game {
 
             //get updated game state
             myService.updateGameState(serverService.getGameState());
+            myService.updatePlayerScores(serverService.getPlayerScores());
 
             System.out.println("after update gamestate");
 

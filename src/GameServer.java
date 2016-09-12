@@ -22,7 +22,7 @@ public class GameServer implements GameService {
 	private int score;
 	public int N;
 	public int K;
-	public String[] players = {};
+//	public String[] players = {};
 	public String[][] GameState = null;
 	private String ID;
 	private String playerAddr = "";
@@ -31,6 +31,8 @@ public class GameServer implements GameService {
 	public boolean IsPrimaryServer;
 	public boolean IsBackupServer;
 	public testGUI gui;
+	Hashtable<String, Integer> playerScores
+			= new Hashtable<String, Integer>();
 
 	public GameServer() {}
 	public GameServer(int n, int k, String id, String addr) {
@@ -39,7 +41,9 @@ public class GameServer implements GameService {
         this.K=k;
         this.ID = id;
         this.GameState = new String[n][k];
-        this.IsPrimaryServer = false;
+		for(String[] row : this.GameState)
+			Arrays.fill(row,"O");
+		this.IsPrimaryServer = false;
         this.IsBackupServer = false;
         this.playerAddr = addr;
 		this.randomizer = new Randomizer(n, k, treasureNum, this.GameState);
@@ -47,7 +51,14 @@ public class GameServer implements GameService {
 
 	@Override
 	public void updateGameState(String[][] gameState) throws RemoteException {
-		this.GameState = gameState;
+
+		for(int i = 0; i < gameState.length; i++)
+		{
+			for (int j = 0; j < gameState[i].length; j++)
+			{
+				this.GameState[i][j] = gameState[i][j];
+			}
+		}
 	}
 
 	@Override
@@ -81,7 +92,8 @@ public class GameServer implements GameService {
 
 	@Override
 	public Boolean updateGui() throws RemoteException {
-		this.gui.updateState(this.GameState);
+//		this.gui.updateState(this.GameState);
+		this.gui.update();
 		return true;
 	}
 
@@ -93,7 +105,10 @@ public class GameServer implements GameService {
 	@Override
 	public Integer[] newPlayerJoin(String userAddr) throws RemoteException {
 		Integer[] newPos = randomizer.setRandomLocation(true, userAddr, this.GameState);
-		this.GameState[newPos[0]][newPos[1]] = userAddr;
+		String userID = userAddr.split("@")[0];
+		this.GameState[newPos[0]][newPos[1]] = userID;
+		this.playerScores.put(userID,0);
+		updatePlayerScoreList();
 		return newPos;
 	}
 
@@ -107,6 +122,11 @@ public class GameServer implements GameService {
 	public Integer[] getPos() throws RemoteException {
 		Integer[] myPos = {this.xCord, this.yCord};
 		return myPos;
+	}
+
+	@Override
+	public void addScore() throws RemoteException{
+		this.score ++;
 	}
 
 	@Override
@@ -127,6 +147,38 @@ public class GameServer implements GameService {
 		}
 	}
 
+
+	@Override
+	public void playerListChanged(List<String> newplayerList) throws RemoteException{
+		for(String player : this.playerList){
+			if(!newplayerList.contains(player)){
+				//player left, need to update the playerscore and the game state
+				String leftPlayerID = player.split("@")[0];
+				playerScores.remove(leftPlayerID);
+				updatePlayerScoreList();
+				boolean found = false;
+				for(int i = 0; i < this.GameState.length && !found; i++)
+				{
+					for (int j = 0; j < this.GameState[i].length; j++)
+					{
+						if(this.GameState[i][j] != null && this.GameState[i][j].equals(leftPlayerID)){
+							this.GameState[i][j] = "O";
+							found = true;
+							break;
+						}
+					}
+				}
+			}
+		}
+		try{
+			updateBackupServer();
+		}
+		catch (Exception ex){
+			System.out.println(ex.getMessage());
+		}
+
+	}
+
 	@Override
 	public void updateBackupServer() throws Exception {
 		String backupServer = serverList[1];
@@ -134,6 +186,18 @@ public class GameServer implements GameService {
 		Registry registry = LocateRegistry.getRegistry(backupServerPort);
 		GameService backupServerStub = (GameService) registry.lookup("rmi://" + backupServer + "/game");
 		backupServerStub.updateGameState(this.GameState);
+		backupServerStub.updatePlayerScores(playerScores);
+	}
+
+	@Override
+	public Hashtable<String,Integer> getPlayerScores() throws RemoteException{
+		return playerScores;
+	}
+
+	@Override
+	public void updatePlayerScores(Hashtable<String, Integer> scores) throws RemoteException{
+		playerScores = (Hashtable<String, Integer>)scores.clone();
+		updatePlayerScoreList();
 	}
 
 	@Override
@@ -150,12 +214,12 @@ public class GameServer implements GameService {
 			servername += "(Main Server)";
 		else if(IsBackupServer)
 			servername += "(Backup Server)";
-		this.gui = new testGUI(servername, this.players, this.GameState, this.N, this.K);
+		this.gui = new testGUI(servername, this.playerScores, this.GameState, this.N, this.K);
 		this.gui.setSize(500,500);
 	}
 
 	@Override
-	public Integer[] makeMove(int m, Integer[] myPos){
+	public Integer[] makeMove(int m, Integer[] myPos, String userAddr){
 		//In myPos, first is y axis value, second is x axis value
 		if(m != 0 && m != 1 && m != 2 && m != 3 && m != 4 && m != 9){
 			System.out.println("Wrong step detected!");
@@ -169,22 +233,22 @@ public class GameServer implements GameService {
 			if (y - 1 >= 0 && (null == this.GameState[y-1][x] || "O".equals(this.GameState[y-1][x]) || "x".equals(this.GameState[y-1][x]))){
 				myPos[0] = myPos[0] - 1;
 			}
-			return updateUserPos(oldPos, myPos);
+			return updateUserPos(oldPos, myPos, userAddr);
 		} else if (m == 3) {
 			if (x + 1 < this.K && (null == this.GameState[y][x+1] || "O".equals(this.GameState[y][x+1]) || "x".equals(this.GameState[y][x+1]))) {
 				myPos[1] = myPos[1] + 1;
 			}
-			return updateUserPos(oldPos, myPos);
+			return updateUserPos(oldPos, myPos, userAddr);
 		} else if (m == 2) {
 			if (y + 1 < this.N && (null == this.GameState[y+1][x] || "O".equals(this.GameState[y+1][x]) || "x".equals(this.GameState[y+1][x]))){
 				myPos[0] = myPos[0] + 1;
 			}
-			return updateUserPos(oldPos, myPos);
+			return updateUserPos(oldPos, myPos, userAddr);
 		} else if (m == 1) {
 			if (x - 1 >= 0 && (null == this.GameState[y][x-1] || "O".equals(this.GameState[y][x-1]) || "x".equals(this.GameState[y][x-1]))) {
 				myPos[1] = myPos[1] - 1;
 			}
-			return updateUserPos(oldPos, myPos);
+			return updateUserPos(oldPos, myPos, userAddr);
 		} else {
 			return myPos;
 		}
@@ -278,19 +342,60 @@ public class GameServer implements GameService {
 		}
 	}
 
-	private Integer[] updateUserPos(Integer[] oldPos, Integer[] newPos) {
+	private Integer[] updateUserPos(Integer[] oldPos, Integer[] newPos, String userAddr){
 		if (oldPos[0] == newPos[0] && oldPos[1] == newPos[1]) {
 			return oldPos;
 		} else {
 			String player = this.GameState[oldPos[0]][oldPos[1]];
 			Boolean isTreasure = "x".equals(this.GameState[newPos[0]][newPos[1]]);
-			this.GameState[oldPos[0]][oldPos[1]] = null;
+			this.GameState[oldPos[0]][oldPos[1]] = "O";
 			this.GameState[newPos[0]][newPos[1]] = player;
 			if (isTreasure) {
 				Integer[] tPos = randomizer.setRandomLocation(false, "", this.GameState);
 				this.GameState[tPos[0]][tPos[1]] = "x";
+				try {
+					Integer score = playerScores.get(player);
+					score ++;
+					playerScores.put(player,score);
+					addPlayerScore(userAddr);
+					updatePlayerScoreList();
+				}
+				catch (Exception ex) {
+					System.out.println(ex.getMessage());
+				}
 			}
 			return newPos;
+		}
+	}
+
+	public void updatePlayerScoreList() {
+		if (this.gui != null && this.gui.players != null) {
+			this.gui.players.clear();
+			for (String key : playerScores.keySet()) {
+				this.gui.players.addElement(key + ": " + playerScores.get(key));
+			}
+		}
+	}
+
+	private void addPlayerScore(String addr) throws Exception{
+		try {
+			Integer serverPort = Integer.parseInt(addr.substring(addr.indexOf(":") + 1));
+			Registry r = LocateRegistry.getRegistry(serverPort);
+			GameService userStub = (GameService) r.lookup("rmi://" + addr + "/game");
+			userStub.addScore();
+		}
+		catch (ConnectException ce){
+			throw ce;
+		}
+		catch (RemoteException re){
+			throw re;
+		}
+		catch (NotBoundException nb){
+			throw nb;
+		}
+		catch (Exception ex){
+			System.out.println(ex.getStackTrace());
+			throw ex;
 		}
 	}
 }

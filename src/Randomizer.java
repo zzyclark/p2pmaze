@@ -28,7 +28,7 @@ public class Randomizer {
             randRow = random.nextInt(ROWS);
             randCol = random.nextInt(COLUMNS);
 
-            if (grid[randRow][randCol] != null) {
+            if (grid[randRow][randCol] != null && grid[randRow][randCol] != "O") {
                 continue;
             }
 
