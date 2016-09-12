@@ -84,38 +84,50 @@ public class Game {
     }
 
     private static GameService getServerList(List<String> userList, String userIp, Integer userPort, String userId) throws Exception {
-        //First player is the server
-        //Second is the back up server
-        String mainServer = userList.get(0);
+        String[] newServerList;
         String myAddr = userId + '@' + userIp + ':' + userPort;
-        GameService mainServerStub = getGameService(mainServer);
         GameService userStub = getGameService(myAddr);
 
-        String [] newServerList = mainServerStub.getServerList();
+        // Less than 2 player, no complete main backup server structure
+        if (userList.size() <= 2) {
+            //First player is the server
+            //Second is the back up server
+            String mainServer = userList.get(0);
+            GameService mainServerStub = getGameService(mainServer);
 
-        if (newServerList[0] == null && newServerList[1] == null) {
-            //condition 1, no server in list
-            //Create new game state
-            newServerList[0] = myAddr;
-            mainServerStub = userStub;
-            userStub.setServer(true,false);
-            //If new server exist, init new game state at main server
-            userStub.startNewGame();
-            System.out.println("set primary server");
-        } else if (newServerList[1] == null) {
-            //condition 2, 1 main server in list
-            newServerList[1] = myAddr;
-            userStub.setServer(false,true);
-            //inform main server about the new back up server
-            mainServerStub.updateServerList(newServerList);
-            System.out.println("set backup server");
+            newServerList = mainServerStub.getServerList();
+
+            if (newServerList[0] == null && newServerList[1] == null) {
+                //condition 1, no server in list
+                //Create new game state
+                newServerList[0] = myAddr;
+                userStub.setServer(true,false);
+                //If new server exist, init new game state at main server
+                userStub.startNewGame();
+                System.out.println("set primary server");
+            } else if (newServerList[1] == null) {
+                //condition 2, 1 main server in list
+                newServerList[1] = myAddr;
+                userStub.setServer(false,true);
+                //inform main server about the new back up server
+                mainServerStub.updateServerList(newServerList);
+                System.out.println("set backup server");
+            }
+        } else {
+            String otherUser = userList.get(0);
+            GameService otherUserStub = getGameService(otherUser);
+            newServerList = otherUserStub.getServerList();
         }
 
         //update game console server list
         serverList = newServerList;
         //update server list to user own server
         userStub.updateServerList(serverList);
-        System.out.println("Server list updated");
+
+        //validate server list
+        checkServer(myAddr);
+        System.out.println("Server lists info: " + serverList[0] + " " + serverList[1]);
+        GameService mainServerStub = getGameService(serverList[0]);
         return mainServerStub;
     }
 
@@ -137,8 +149,11 @@ public class Game {
     }
 
     private static void makeMovement(int movement, String userAddr) throws Exception {
+        System.out.println(userAddr + " make move: " + movement);
         //Check server status and update
         checkServer(userAddr);
+
+        System.out.println("Current Servers are: " + serverList[0] + " " + serverList[1]);
 
         String server = serverList[0];
         GameService serverStub = getGameService(server);
@@ -214,6 +229,7 @@ public class Game {
                 GameService backupStub = getGameService(backupServer);
                 GameService myStub = getGameService(myAddr);
                 serverList = backupStub.updateServerList(true, serverList);
+                System.out.println("After update: " + serverList[0] + serverList[1]);
                 myStub.updateServerList(serverList);
             }
 
