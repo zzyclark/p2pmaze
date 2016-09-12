@@ -56,24 +56,32 @@ public class Game {
         return playerLeft;
     }
 
-    private static List<String> getInactiveUserlist(String[][] gameState) {
+    private static List<String> getInactiveUserlist(String[][] gameState, String userAddr, List<String> userList) throws Exception{
         List<String> allUserList = new ArrayList<String>();
         for (int i = 0; i < gameState.length; ++i) {
             String[] row = gameState[i];
             for (int j = 0; j < row.length; ++j) {
-                if (null != row[j] && !row[j].equals("x")) {
+                if (null != row[j] && !row[j].equals("x") && !row[j].equals("O")) {
                     allUserList.add(row[j]);
                 }
             }
         }
 
         List<String> inactiveUserList = new ArrayList<String>();
-        for (String userAddr : allUserList) {
-            try {
-                GameService otherUser = getGameService(userAddr);
-            } catch (Exception e) {
-                inactiveUserList.add(userAddr);
+        OuterLoop:
+        for (String playAddr : allUserList) {
+            for (String serverUser : userList) {
+                String userName = serverUser.split("@")[0];
+                if (playAddr.equals(userName)) {
+                    try {
+                        GameService otherUser = getGameService(serverUser);
+                        continue OuterLoop;
+                    } catch (Exception e) {
+                        inactiveUserList.add(playAddr);
+                    }
+                }
             }
+            inactiveUserList.add(playAddr);
         }
 
         if (0 != inactiveUserList.size()) {
@@ -160,13 +168,15 @@ public class Game {
         GameService userStub = getGameService(userAddr);
 
         Integer[] myPos = userStub.getPos();
+        List<String> serverUserList = userStub.getUserList();
+        userStub.setUserList(serverUserList);
 
         //Call server to remove those inactive user
-//        String[][] beforeMovementState = serverStub.getGameState();
-//        List<String> inactiveList = getInactiveUserlist(beforeMovementState);
-//        if (null != inactiveList) {
-//            serverStub.removeInactiveUser(inactiveList);
-//        }
+        String[][] beforeMovementState = serverStub.getGameState();
+        List<String> inactiveList = getInactiveUserlist(beforeMovementState, userAddr, serverUserList);
+        if (null != inactiveList) {
+            serverStub.removeInactiveUser(inactiveList);
+        }
 
         //Make movement
         myPos = serverStub.makeMove(movement, myPos, userAddr);
@@ -314,7 +324,7 @@ public class Game {
 
             //initial refresh, in order to show the right info in window
             //TODO: need to fix this later
-            makeMovement(0, myAddr);
+//            makeMovement(0, myAddr);
             while(true){
                 Scanner reader = new Scanner(System.in);
                 int step = reader.nextInt();

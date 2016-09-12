@@ -25,7 +25,7 @@ public class testGUI extends JFrame {
         setVisible(true);
 
 
-        this.players = new DefaultListModel<>();
+        this.players = new DefaultListModel<String>();
         for(String key : playerScores.keySet()){
             this.players.addElement(key + ": " + playerScores.get(key));
         }
@@ -51,29 +51,6 @@ public class testGUI extends JFrame {
         table.setCellSelectionEnabled(false);
         panel1.add(scrollPane, BorderLayout.EAST);
     }
-
-//    public void refreshContent(ArrayList<String> players, String[][] gs){
-//
-//        playerList = new JList(players.toArray());
-//        DefaultListCellRenderer renderer =  (DefaultListCellRenderer)playerList.getCellRenderer();
-//        renderer.setHorizontalAlignment(JLabel.LEFT);
-//
-//        String[] columns = new String[gs.length];
-//        for(int i = 1;i<=gs.length;i++){
-//            columns[i-1] = Integer.toString(i);
-//        }
-//
-//        table = new JTable(gs,columns){
-//            public boolean isCellEditable(int row, int column) {
-//                return false;
-//            };
-//        };
-//        table.setTableHeader(null);
-//        JScrollPane scrollPane = new JScrollPane(table);
-//        table.enableInputMethods(false);
-//        table.setCellSelectionEnabled(false);
-//        panel1.repaint();
-//    }
 
     public void update(){
         table.repaint();

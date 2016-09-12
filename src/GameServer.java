@@ -81,6 +81,11 @@ public class GameServer implements GameService {
 	}
 
 	@Override
+	public List<String> getUserList() throws RemoteException {
+		return this.playerList;
+	}
+
+	@Override
 	public String initContact(String myAddr) throws RemoteException {
 		//new user in, add user to list
 		this.playerList.add(myAddr);
@@ -135,20 +140,33 @@ public class GameServer implements GameService {
 				if (null != row[j]) {
 					for (String inactiveUser : inactiveUserList) {
 						if (inactiveUser.equals(row[j])) {
-							this.GameState[i][j] = null;
+							this.GameState[i][j] = "O";
 							continue OuterLoop;
 						}
 					}
 				}
 			}
 		}
+		for (String inactiveUser : inactiveUserList) {
+			this.playerScores.remove(inactiveUser);
+		}
 	}
 
 
 	@Override
 	public void playerListChanged(List<String> newplayerList) throws RemoteException{
+		System.out.println("Start remove user");
+		System.out.println("New user list:");
+		for (String newUser: newplayerList) {
+			System.out.println(newUser);
+		}
+		System.out.println("Old user list:");
+		for (String olduser: this.playerList) {
+			System.out.println(olduser);
+		}
 		for(String player : this.playerList){
 			if(!newplayerList.contains(player)){
+				System.out.println("Remove user: " + player);
 				//player left, need to update the playerscore and the game state
 				String leftPlayerID = player.split("@")[0];
 				playerScores.remove(leftPlayerID);
@@ -325,10 +343,10 @@ public class GameServer implements GameService {
 		}
 
 		//get an active user, and let it be backup server
-		Iterator<String> iterator = this.playerList.iterator();
+		ListIterator<String> iterator = this.playerList.listIterator(this.playerList.size());
 		System.out.println("Change back up server.");
-		while (iterator.hasNext()) {
-			String userAddr = iterator.next();
+		while (iterator.hasPrevious()) {
+			String userAddr = iterator.previous();
 			System.out.println("Back up server candidate: " + userAddr);
 			try {
 				Integer backupServerPort = Integer.parseInt(userAddr.substring(userAddr.indexOf(":") + 1));
