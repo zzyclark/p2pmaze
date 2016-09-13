@@ -95,7 +95,13 @@ public class GameServer implements GameService {
 	@Override
 	public Boolean updateGui() throws RemoteException {
 //		this.gui.updateState(this.GameState);
-		this.gui.update();
+		String title = ID;
+		if(IsPrimaryServer)
+			title += "(Main Server)";
+		else if(IsBackupServer)
+			title += "(Backup Server)";
+		if(this.gui != null)
+			this.gui.update(title);
 		return true;
 	}
 
@@ -278,6 +284,7 @@ public class GameServer implements GameService {
 
 	@Override
 	public String[] getServerList() throws RemoteException {
+
 		return serverList;
 	}
 
@@ -288,7 +295,7 @@ public class GameServer implements GameService {
 
 	@Override
 	public void updateServerList(String[] newServerList) throws RemoteException {
-		serverList = newServerList;
+		serverList = newServerList.clone();
 	}
 
 	@Override
@@ -357,6 +364,8 @@ public class GameServer implements GameService {
 					//peak first active user to be backup server
 					newList[1] = userAddr;
 					this.serverList = newList;
+					userStub.setServer(false,true);
+					userStub.updateGui();
 					System.out.println("Back up server change to: " + this.serverList[1]);
 					return this.serverList;
 				}

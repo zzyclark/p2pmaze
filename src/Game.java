@@ -203,7 +203,7 @@ public class Game {
         }
     }
 
-    private static GameService getGameService(String addr) throws Exception{
+    public static GameService getGameService(String addr) throws Exception{
         try {
             Integer serverPort = Integer.parseInt(addr.substring(addr.indexOf(":") + 1));
             Registry r = LocateRegistry.getRegistry(serverPort);
@@ -239,6 +239,8 @@ public class Game {
                 GameService backupStub = getGameService(backupServer);
                 GameService myStub = getGameService(myAddr);
                 serverList = backupStub.updateServerList(true, serverList);
+                backupStub.setServer(true,false);
+                backupStub.updateGui();
                 System.out.println("After update: " + serverList[0] + serverList[1]);
                 myStub.updateServerList(serverList);
             }

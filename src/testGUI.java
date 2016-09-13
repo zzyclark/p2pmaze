@@ -57,6 +57,12 @@ public class testGUI extends JFrame {
         playerList.repaint();
     }
 
+    public void update(String newTitle){
+        this.setTitle(newTitle);
+        table.repaint();
+        playerList.repaint();
+    }
+
     public void updateState(String[][] gameState) {
 //        DefaultListModel lModel = (DefaultListModel)playerList.getModel();
 //        lModel.removeAllElements();
