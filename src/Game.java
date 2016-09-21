@@ -13,7 +13,8 @@ import java.util.Scanner;
  * Created by clark on 22/8/16.
  */
 public class Game {
-    private static String[] serverList = new String[2];
+    //private static String[] serverList = new String[2];
+    private static List<String> playerLists;
     public Game() {}
 
     private static boolean updatePlayerList(List<String> userList, String myAddr, TrackerService trackerStub) throws RemoteException {
@@ -92,51 +93,71 @@ public class Game {
     }
 
     private static GameService getServerList(List<String> userList, String userIp, Integer userPort, String userId) throws Exception {
-        String[] newServerList;
+        //use the first two users as servers.
         String myAddr = userId + '@' + userIp + ':' + userPort;
         GameService userStub = getGameService(myAddr);
-
-        // Less than 2 player, no complete main backup server structure
-        if (userList.size() <= 2) {
-            //First player is the server
-            //Second is the back up server
-            String mainServer = userList.get(0);
-            GameService mainServerStub = getGameService(mainServer);
-
-            newServerList = mainServerStub.getServerList();
-
-            if (newServerList[0] == null && newServerList[1] == null) {
-                //condition 1, no server in list
-                //Create new game state
-                newServerList[0] = myAddr;
-                userStub.setServer(true,false);
-                //If new server exist, init new game state at main server
-                userStub.startNewGame();
-                System.out.println("set primary server");
-            } else if (newServerList[1] == null) {
-                //condition 2, 1 main server in list
-                newServerList[1] = myAddr;
-                userStub.setServer(false,true);
-                //inform main server about the new back up server
-                mainServerStub.updateServerList(newServerList);
-                System.out.println("set backup server");
-            }
-        } else {
-            String otherUser = userList.get(0);
-            GameService otherUserStub = getGameService(otherUser);
-            newServerList = otherUserStub.getServerList();
+        if(userList.size()==1){
+            //current player is the main server
+            userStub.setServer(true,false);
+            userStub.startNewGame();
+            return userStub;
         }
-
-        //update game console server list
-        serverList = newServerList;
-        //update server list to user own server
-        userStub.updateServerList(serverList);
-
-        //validate server list
-        checkServer(myAddr);
-        System.out.println("Server lists info: " + serverList[0] + " " + serverList[1]);
-        GameService mainServerStub = getGameService(serverList[0]);
-        return mainServerStub;
+        else if(userList.size()==2){
+            String mainServerAddr = userList.get(0);
+            userStub.setServer(false,true);
+            GameService mainServer = getGameService(mainServerAddr);
+            return mainServer;
+        }
+        else{
+            String mainServerAddr = userList.get(0);
+            GameService mainServer = getGameService(mainServerAddr);
+            return mainServer;
+        }
+//        String[] newServerList;
+//        String myAddr = userId + '@' + userIp + ':' + userPort;
+//        GameService userStub = getGameService(myAddr);
+//
+//        // Less than 2 player, no complete main backup server structure
+//        if (userList.size() <= 2) {
+//            //First player is the server
+//            //Second is the back up server
+//            String mainServer = userList.get(0);
+//            GameService mainServerStub = getGameService(mainServer);
+//
+//            newServerList = mainServerStub.getServerList();
+//
+//            if (newServerList[0] == null && newServerList[1] == null) {
+//                //condition 1, no server in list
+//                //Create new game state
+//                newServerList[0] = myAddr;
+//                userStub.setServer(true,false);
+//                //If new server exist, init new game state at main server
+//                userStub.startNewGame();
+//                System.out.println("set primary server");
+//            } else if (newServerList[1] == null) {
+//                //condition 2, 1 main server in list
+//                newServerList[1] = myAddr;
+//                userStub.setServer(false,true);
+//                //inform main server about the new back up server
+//                mainServerStub.updateServerList(newServerList);
+//                System.out.println("set backup server");
+//            }
+//        } else {
+//            String otherUser = userList.get(0);
+//            GameService otherUserStub = getGameService(otherUser);
+//            newServerList = otherUserStub.getServerList();
+//        }
+//
+//        //update game console server list
+//        serverList = newServerList;
+//        //update server list to user own server
+//        userStub.updateServerList(serverList);
+//
+//        //validate server list
+//        checkServer(myAddr);
+//        System.out.println("Server lists info: " + serverList[0] + " " + serverList[1]);
+//        GameService mainServerStub = getGameService(serverList[0]);
+//        return mainServerStub;
     }
 
     private static void waitUserServerStart (String addr) {
@@ -159,12 +180,12 @@ public class Game {
     private static void makeMovement(int movement, String userAddr) throws Exception {
         System.out.println(userAddr + " make move: " + movement);
         //Check server status and update
-        checkServer(userAddr);
+        GameService serverStub = checkMainServer(userAddr);
+        if(playerLists.size()>1) {
+            GameService subServerStub = checkSubServer(userAddr);
+        }
+        //System.out.println("Current Servers are: " + serverList[0] + " " + serverList[1]);
 
-        System.out.println("Current Servers are: " + serverList[0] + " " + serverList[1]);
-
-        String server = serverList[0];
-        GameService serverStub = getGameService(server);
         GameService userStub = getGameService(userAddr);
 
         Integer[] myPos = userStub.getPos();
@@ -173,10 +194,10 @@ public class Game {
 
         //Call server to remove those inactive user
         String[][] beforeMovementState = serverStub.getGameState();
-        List<String> inactiveList = getInactiveUserlist(beforeMovementState, userAddr, serverUserList);
-        if (null != inactiveList) {
-            serverStub.removeInactiveUser(inactiveList);
-        }
+//        List<String> inactiveList = getInactiveUserlist(beforeMovementState, userAddr, serverUserList);
+//        if (null != inactiveList) {
+//            serverStub.removeInactiveUser(inactiveList);
+//        }
 
         //Make movement
         myPos = serverStub.makeMove(movement, myPos, userAddr);
@@ -185,22 +206,18 @@ public class Game {
         userStub.updateGameState(newGameState);
         userStub.updatePlayerScores(serverStub.getPlayerScores());
         userStub.updateGui();
-        //Each time make move, update back up server
-        if (null != serverList[1]) {
-            userStub.updateBackupServer();
-        }
 
         System.out.println("You have get new contact history list after your movement\n");
-        for (String[] row: newGameState) {
-            for(String item: row) {
-                if (null == item) {
-                    System.out.print("   ");
-                } else {
-                    System.out.print(item);
-                }
-            }
-            System.out.println();
-        }
+//        for (String[] row: newGameState) {
+//            for(String item: row) {
+//                if (null == item) {
+//                    System.out.print("   ");
+//                } else {
+//                    System.out.print(item);
+//                }
+//            }
+//            System.out.println();
+//        }
     }
 
     public static GameService getGameService(String addr) throws Exception{
@@ -228,32 +245,37 @@ public class Game {
      * Each time before update game state, try to test if main/backup server is active
      * @throws Exception
      */
-    private static void checkServer(String myAddr) throws Exception{
-        //only check if server list has 2 value
-        if(null != serverList[1]) {
-            String mainServer = serverList[0];
-            String backupServer =serverList[1];
+    private static GameService checkMainServer(String myAddr) throws Exception{
+        for (int i = 0; i<playerLists.size(); i++) {
+            String addr = playerLists.get(i);
             try {
-                GameService mainStub = getGameService(mainServer);
-            } catch (Exception e) {
-                GameService backupStub = getGameService(backupServer);
-                GameService myStub = getGameService(myAddr);
-                serverList = backupStub.updateServerList(true, serverList);
-                backupStub.setServer(true,false);
-                backupStub.updateGui();
-                System.out.println("After update: " + serverList[0] + serverList[1]);
-                myStub.updateServerList(serverList);
-            }
-
-            try {
-                GameService backupStub = getGameService(backupServer);
-            } catch (Exception e) {
-                GameService mainStub = getGameService(mainServer);
-                GameService myStub = getGameService(myAddr);
-                serverList = mainStub.updateServerList(false, serverList);
-                myStub.updateServerList(serverList);
+                GameService mainStub = getGameService(addr);
+                mainStub.setServer(true,false);
+                return mainStub;
+            }catch (Exception ex){
+                playerLists.remove(addr);
+                i--;
             }
         }
+        return getGameService(myAddr);
+    }
+
+    /**
+     * Each time before update game state, try to test if main/backup server is active
+     * @throws Exception
+     */
+    private static GameService checkSubServer(String myAddr) throws Exception{
+        for (int i = 1; i<playerLists.size(); i++) {
+            try {
+                GameService mainStub = getGameService(playerLists.get(i));
+                mainStub.setServer(false,true);
+                return mainStub;
+            }catch (Exception ex){
+                playerLists.remove(i);
+                i--;
+            }
+        }
+        return getGameService(myAddr);
     }
 
     public static void main(String[] args) {
@@ -292,6 +314,7 @@ public class Game {
 
             //update the player list (remove dead and add myself)
             boolean playerLeft = updatePlayerList(playerList, myAddr, trackerStub);
+            playerLists = new ArrayList<>(playerList);
 
             System.out.println(myAddr + " joined the game");
 

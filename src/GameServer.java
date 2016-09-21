@@ -14,7 +14,7 @@ import java.util.zip.Deflater;
  */
 
 public class GameServer implements GameService {
-	private String[] serverList = new String[2];
+//	private String[] serverList = new String[2];
 	private List<String> userContactHistory = new ArrayList<String>();
 	private Randomizer randomizer;
 	private int xCord;
@@ -61,19 +61,19 @@ public class GameServer implements GameService {
 		}
 	}
 
-	@Override
-	public String[] updateServerList(Boolean isMain, String[] oldList) throws RemoteException {
-		if (isMain && oldList[0].equals(this.serverList[0])) {
-			//Main server down, backup server change to main server
-			return changeServer(true);
-		} else if (isMain) {
-			//Server list already changed, user may request new server list
-			return this.serverList;
-		} else {
-			//Backup server down, random pick user to be backup server
-			return changeServer(false);
-		}
-	}
+//	@Override
+//	public String[] updateServerList(Boolean isMain, String[] oldList) throws RemoteException {
+//		if (isMain && oldList[0].equals(this.serverList[0])) {
+//			//Main server down, backup server change to main server
+//			return changeServer(true);
+//		} else if (isMain) {
+//			//Server list already changed, user may request new server list
+//			return this.serverList;
+//		} else {
+//			//Backup server down, random pick user to be backup server
+//			return changeServer(false);
+//		}
+//	}
 
 	@Override
 	public void setUserList(List<String> userList) throws RemoteException {
@@ -117,6 +117,9 @@ public class GameServer implements GameService {
 		this.GameState[newPos[0]][newPos[1]] = userID;
 		this.playerScores.put(userID,0);
 		updatePlayerScoreList();
+		try {
+			updateBackupServer();
+		}catch (Exception ex){}
 		return newPos;
 	}
 
@@ -163,13 +166,14 @@ public class GameServer implements GameService {
 	public void playerListChanged(List<String> newplayerList) throws RemoteException{
 		System.out.println("Start remove user");
 		System.out.println("New user list:");
-		for (String newUser: newplayerList) {
-			System.out.println(newUser);
-		}
-		System.out.println("Old user list:");
-		for (String olduser: this.playerList) {
-			System.out.println(olduser);
-		}
+//		for (String newUser: newplayerList) {
+//			System.out.println(newUser);
+//		}
+//		System.out.println("Old user list:");
+//		for (String olduser: this.playerList) {
+//			System.out.println(olduser);
+//		}
+
 		for(String player : this.playerList){
 			if(!newplayerList.contains(player)){
 				System.out.println("Remove user: " + player);
@@ -191,6 +195,7 @@ public class GameServer implements GameService {
 				}
 			}
 		}
+		playerList = new ArrayList(newplayerList);
 		try{
 			updateBackupServer();
 		}
@@ -202,12 +207,25 @@ public class GameServer implements GameService {
 
 	@Override
 	public void updateBackupServer() throws Exception {
-		String backupServer = serverList[1];
-		Integer backupServerPort = Integer.parseInt(backupServer.substring(backupServer.indexOf(":") + 1));
-		Registry registry = LocateRegistry.getRegistry(backupServerPort);
-		GameService backupServerStub = (GameService) registry.lookup("rmi://" + backupServer + "/game");
-		backupServerStub.updateGameState(this.GameState);
-		backupServerStub.updatePlayerScores(playerScores);
+		GameService backupServerStub = null;
+		for(int i = 1; i<this.playerList.size();i++) {
+			try {
+				String backupServer = this.playerList.get(1);
+				Integer backupServerPort = Integer.parseInt(backupServer.substring(backupServer.indexOf(":") + 1));
+				Registry registry = LocateRegistry.getRegistry(backupServerPort);
+				backupServerStub = (GameService) registry.lookup("rmi://" + backupServer + "/game");
+			}
+			catch (Exception ex) {
+				this.playerList.remove(i);
+				i--;
+			}
+		}
+		if(backupServerStub!=null) {
+			backupServerStub.setServer(false,true);
+			backupServerStub.updateGameState(this.GameState);
+			backupServerStub.setUserList(this.playerList);
+			backupServerStub.updatePlayerScores(playerScores);
+		}
 	}
 
 	@Override
@@ -282,21 +300,21 @@ public class GameServer implements GameService {
 		return userContactHistory;
 	}
 
-	@Override
-	public String[] getServerList() throws RemoteException {
-
-		return serverList;
-	}
+//	@Override
+//	public String[] getServerList() throws RemoteException {
+//
+//		return serverList;
+//	}
 
 	@Override
 	public String[][] getGameState() throws RemoteException{
 		return GameState;
 	}
 
-	@Override
-	public void updateServerList(String[] newServerList) throws RemoteException {
-		serverList = newServerList.clone();
-	}
+//	@Override
+//	public void updateServerList(String[] newServerList) throws RemoteException {
+//		serverList = newServerList.clone();
+//	}
 
 	@Override
 	public void setServer(Boolean IsPrimary, Boolean IsBackup) throws RemoteException{
@@ -341,44 +359,44 @@ public class GameServer implements GameService {
 		}
 	}
 
-	private String[] changeServer(Boolean changeMain) throws RemoteException {
-		String[] newList = new String[2];
-		if (changeMain) {
-			newList[0] = this.serverList[1];
-		} else {
-			newList[0] = this.serverList[0];
-		}
-
-		//get an active user, and let it be backup server
-		ListIterator<String> iterator = this.playerList.listIterator(this.playerList.size());
-		System.out.println("Change back up server.");
-		while (iterator.hasPrevious()) {
-			String userAddr = iterator.previous();
-			System.out.println("Back up server candidate: " + userAddr);
-			try {
-				Integer backupServerPort = Integer.parseInt(userAddr.substring(userAddr.indexOf(":") + 1));
-				Registry registry = LocateRegistry.getRegistry(backupServerPort);
-				GameService userStub = (GameService) registry.lookup("rmi://" + userAddr + "/game");
-
-				if (userStub.isActive() && !userAddr.equals(this.playerAddr)) {
-					//peak first active user to be backup server
-					newList[1] = userAddr;
-					this.serverList = newList;
-					userStub.setServer(false,true);
-					userStub.updateGui();
-					System.out.println("Back up server change to: " + this.serverList[1]);
-					return this.serverList;
-				}
-			} catch (ConnectException ce) {
-				iterator.remove();
-			} catch (NotBoundException ne) {
-				iterator.remove();
-			}
-		}
-		System.out.println("Back up server change to: " + this.serverList[1]);
-		this.serverList = newList;
-		return this.serverList;
-	}
+//	private String[] changeServer(Boolean changeMain) throws RemoteException {
+//		String[] newList = new String[2];
+//		if (changeMain) {
+//			newList[0] = this.serverList[1];
+//		} else {
+//			newList[0] = this.serverList[0];
+//		}
+//
+//		//get an active user, and let it be backup server
+//		ListIterator<String> iterator = this.playerList.listIterator(this.playerList.size());
+//		System.out.println("Change back up server.");
+//		while (iterator.hasPrevious()) {
+//			String userAddr = iterator.previous();
+//			System.out.println("Back up server candidate: " + userAddr);
+//			try {
+//				Integer backupServerPort = Integer.parseInt(userAddr.substring(userAddr.indexOf(":") + 1));
+//				Registry registry = LocateRegistry.getRegistry(backupServerPort);
+//				GameService userStub = (GameService) registry.lookup("rmi://" + userAddr + "/game");
+//
+//				if (userStub.isActive() && !userAddr.equals(this.playerAddr)) {
+//					//peak first active user to be backup server
+//					newList[1] = userAddr;
+//					this.serverList = newList;
+//					userStub.setServer(false,true);
+//					userStub.updateGui();
+//					System.out.println("Back up server change to: " + this.serverList[1]);
+//					return this.serverList;
+//				}
+//			} catch (ConnectException ce) {
+//				iterator.remove();
+//			} catch (NotBoundException ne) {
+//				iterator.remove();
+//			}
+//		}
+//		System.out.println("Back up server change to: " + this.serverList[1]);
+//		this.serverList = newList;
+//		return this.serverList;
+//	}
 
 	private Integer[] updateUserPos(Integer[] oldPos, Integer[] newPos, String userAddr){
 		if (oldPos[0] == newPos[0] && oldPos[1] == newPos[1]) {
