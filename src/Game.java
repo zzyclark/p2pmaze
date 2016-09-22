@@ -106,6 +106,7 @@ public class Game {
             String mainServerAddr = userList.get(0);
             userStub.setServer(false,true);
             GameService mainServer = getGameService(mainServerAddr);
+            mainServer.updateBackupServer();
             return mainServer;
         }
         else{
