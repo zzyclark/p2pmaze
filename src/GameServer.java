@@ -36,17 +36,17 @@ public class GameServer implements GameService {
 
 	public GameServer() {}
 	public GameServer(int n, int k, String id, String addr) {
-		Integer treasureNum = (n + k) / 2;
-	    this.N =n;
-        this.K=k;
+		Integer treasureNum = k;
+	    this.N = n;
+        this.K = k;
         this.ID = id;
-        this.GameState = new String[n][k];
+        this.GameState = new String[n][n];
 		for(String[] row : this.GameState)
 			Arrays.fill(row,"O");
 		this.IsPrimaryServer = false;
         this.IsBackupServer = false;
         this.playerAddr = addr;
-		this.randomizer = new Randomizer(n, k, treasureNum, this.GameState);
+		this.randomizer = new Randomizer(n, n, treasureNum, this.GameState);
 	}
 
 	@Override

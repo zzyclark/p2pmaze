@@ -335,9 +335,6 @@ public class Game {
             //join the game
             myService.printGameState();
 
-            //initial refresh, in order to show the right info in window
-            //TODO: need to fix this later
-//            makeMovement(0, myAddr);
             while(true){
                 Scanner reader = new Scanner(System.in);
                 int step = reader.nextInt();
