@@ -89,6 +89,10 @@ public class GameServer implements GameService {
 	public String initContact(String myAddr) throws RemoteException {
 		//new user in, add user to list
 		this.playerList.add(myAddr);
+		System.out.println("I get new user: " + myAddr);
+		for (String name: this.playerList) {
+			System.out.println("after new: " + name);
+		}
 		return "Last Update timestamp";
 	}
 
@@ -164,22 +168,13 @@ public class GameServer implements GameService {
 
 	@Override
 	public void playerListChanged(List<String> newplayerList) throws RemoteException{
-		System.out.println("Start remove user");
-		System.out.println("New user list:");
-//		for (String newUser: newplayerList) {
-//			System.out.println(newUser);
-//		}
-//		System.out.println("Old user list:");
-//		for (String olduser: this.playerList) {
-//			System.out.println(olduser);
-//		}
 
 		for(String player : this.playerList){
 			if(!newplayerList.contains(player)){
 				System.out.println("Remove user: " + player);
 				//player left, need to update the playerscore and the game state
 				String leftPlayerID = player.split("@")[0];
-				playerScores.remove(leftPlayerID);
+				this.playerScores.remove(leftPlayerID);
 				updatePlayerScoreList();
 				boolean found = false;
 				for(int i = 0; i < this.GameState.length && !found; i++)
@@ -195,7 +190,6 @@ public class GameServer implements GameService {
 				}
 			}
 		}
-		playerList = new ArrayList(newplayerList);
 		try{
 			updateBackupServer();
 		}
@@ -208,16 +202,23 @@ public class GameServer implements GameService {
 	@Override
 	public void updateBackupServer() throws Exception {
 		GameService backupServerStub = null;
+		Loop:
 		for(int i = 1; i<this.playerList.size();i++) {
+			System.out.println("Possible back up candidate: " + this.playerList.get(i));
 			try {
-				String backupServer = this.playerList.get(1);
+				String backupServer = this.playerList.get(i);
 				Integer backupServerPort = Integer.parseInt(backupServer.substring(backupServer.indexOf(":") + 1));
 				Registry registry = LocateRegistry.getRegistry(backupServerPort);
 				backupServerStub = (GameService) registry.lookup("rmi://" + backupServer + "/game");
+				if (backupServerStub.isActive() && !backupServer.equals(this.playerAddr)) {
+					System.out.println("Update backup server: " + backupServer);
+					break Loop;
+				}
 			}
 			catch (Exception ex) {
-				this.playerList.remove(i);
-				i--;
+//				ex.printStackTrace();
+//				this.playerList.remove(i);
+//				i--;
 			}
 		}
 		if(backupServerStub!=null) {
@@ -259,6 +260,17 @@ public class GameServer implements GameService {
 
 	@Override
 	public Integer[] makeMove(int m, Integer[] myPos, String userAddr){
+
+		// FIXME: 24/9/16
+		String username = userAddr.split("@")[0];
+		if(null == this.playerScores.get(username)) {
+			try {
+				return newPlayerJoin(userAddr);
+			} catch (Exception e) {
+				System.out.println(e.getMessage());
+			}
+		}
+
 		//In myPos, first is y axis value, second is x axis value
 		if(m != 0 && m != 1 && m != 2 && m != 3 && m != 4 && m != 9){
 			System.out.println("Wrong step detected!");

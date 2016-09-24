@@ -3,11 +3,8 @@ import java.rmi.RemoteException;
 import java.rmi.NotBoundException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.Scanner;
 
 /**
  * Created by clark on 22/8/16.
@@ -182,6 +179,7 @@ public class Game {
         System.out.println(userAddr + " make move: " + movement);
         //Check server status and update
         GameService serverStub = checkMainServer(userAddr);
+        System.out.println(userAddr + " make move after: " + movement);
         if(playerLists.size()>1) {
             GameService subServerStub = checkSubServer(userAddr);
         }
@@ -195,30 +193,19 @@ public class Game {
 
         //Call server to remove those inactive user
         String[][] beforeMovementState = serverStub.getGameState();
-//        List<String> inactiveList = getInactiveUserlist(beforeMovementState, userAddr, serverUserList);
-//        if (null != inactiveList) {
-//            serverStub.removeInactiveUser(inactiveList);
-//        }
+        List<String> inactiveList = getInactiveUserlist(beforeMovementState, userAddr, serverUserList);
+        if (null != inactiveList) {
+            serverStub.removeInactiveUser(inactiveList);
+        }
 
         //Make movement
         myPos = serverStub.makeMove(movement, myPos, userAddr);
         userStub.updatePos(myPos);
         String[][] newGameState = serverStub.getGameState();
+        System.out.println(Arrays.deepToString(newGameState));
         userStub.updateGameState(newGameState);
         userStub.updatePlayerScores(serverStub.getPlayerScores());
         userStub.updateGui();
-
-        System.out.println("You have get new contact history list after your movement\n");
-//        for (String[] row: newGameState) {
-//            for(String item: row) {
-//                if (null == item) {
-//                    System.out.print("   ");
-//                } else {
-//                    System.out.print(item);
-//                }
-//            }
-//            System.out.println();
-//        }
     }
 
     public static GameService getGameService(String addr) throws Exception{
@@ -268,9 +255,9 @@ public class Game {
     private static GameService checkSubServer(String myAddr) throws Exception{
         for (int i = 1; i<playerLists.size(); i++) {
             try {
-                GameService mainStub = getGameService(playerLists.get(i));
-                mainStub.setServer(false,true);
-                return mainStub;
+                GameService subStub = getGameService(playerLists.get(i));
+                subStub.setServer(false,true);
+                return subStub;
             }catch (Exception ex){
                 playerLists.remove(i);
                 i--;
@@ -315,7 +302,7 @@ public class Game {
 
             //update the player list (remove dead and add myself)
             boolean playerLeft = updatePlayerList(playerList, myAddr, trackerStub);
-            playerLists = new ArrayList<>(playerList);
+            playerLists = new ArrayList<String>(playerList);
 
             System.out.println(myAddr + " joined the game");
 
