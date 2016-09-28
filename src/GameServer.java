@@ -216,9 +216,6 @@ public class GameServer implements GameService {
 				}
 			}
 			catch (Exception ex) {
-//				ex.printStackTrace();
-//				this.playerList.remove(i);
-//				i--;
 			}
 		}
 		if(backupServerStub!=null) {
@@ -286,7 +283,7 @@ public class GameServer implements GameService {
 			}
 			return updateUserPos(oldPos, myPos, userAddr);
 		} else if (m == 3) {
-			if (x + 1 < this.K && (null == this.GameState[y][x+1] || "O".equals(this.GameState[y][x+1]) || "x".equals(this.GameState[y][x+1]))) {
+			if (x + 1 < this.N && (null == this.GameState[y][x+1] || "O".equals(this.GameState[y][x+1]) || "x".equals(this.GameState[y][x+1]))) {
 				myPos[1] = myPos[1] + 1;
 			}
 			return updateUserPos(oldPos, myPos, userAddr);
