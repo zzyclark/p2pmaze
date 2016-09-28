@@ -21,20 +21,20 @@ public class Tracker implements TrackerService {
         String newPlayerAddr = playerID + '@' + playerIP + ':' + playerPort;
         if(!playerList.contains(newPlayerAddr)){
             playerList.add(newPlayerAddr);
-            System.out.println("Updated Game List as below:");
-            for(String player : playerList){
-                System.out.println(player);
-            }
+//            System.out.println("Updated Game List as below:");
+//            for(String player : playerList){
+//                System.out.println(player);
+//            }
         }
         return playerList;
     }
 
     public Boolean updatePlayerList(List<String> updatedList) throws RemoteException {
         playerList = updatedList;
-        System.out.println("Updated Game List as below:");
-        for(String player : playerList){
-            System.out.println(player);
-        }
+//        System.out.println("Updated Game List as below:");
+//        for(String player : playerList){
+//            System.out.println(player);
+//        }
         return true;
     }
 

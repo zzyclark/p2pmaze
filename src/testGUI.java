@@ -50,6 +50,7 @@ public class testGUI extends JFrame {
         table.enableInputMethods(false);
         table.setCellSelectionEnabled(false);
         panel1.add(scrollPane, BorderLayout.EAST);
+        System.out.println("Player started normally.");
     }
 
     public void update(){
