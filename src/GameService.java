@@ -23,8 +23,8 @@ public interface GameService extends Remote {
 	Boolean updateGui() throws RemoteException;
 	void startNewGame() throws RemoteException;
 	Integer[] newPlayerJoin(String userAddr) throws RemoteException;
-	void updatePos(Integer[] pos) throws RemoteException;
-	Integer[] getPos() throws RemoteException;
+//	void updatePos(Integer[] pos) throws RemoteException;
+//	Integer[] getPos() throws RemoteException;
 	void removeInactiveUser(List<String> inactiveUserList) throws RemoteException;
 	Hashtable<String,Integer> getPlayerScores() throws RemoteException;
 	void updatePlayerScores(Hashtable<String, Integer> scores) throws RemoteException;

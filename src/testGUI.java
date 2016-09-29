@@ -50,6 +50,14 @@ public class testGUI extends JFrame {
         table.enableInputMethods(false);
         table.setCellSelectionEnabled(false);
         panel1.add(scrollPane, BorderLayout.EAST);
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            System.out.println("Unexpected error. Please contact TA");
+            System.exit(0);
+        }
+        System.out.print("Player ready");
     }
 
     public void update(){
@@ -72,7 +80,7 @@ public class testGUI extends JFrame {
             for (int j = 0; j < row.length; ++j) {
                 if (null == row[j] || "O".equals(row[j])) {
                     table.getModel().setValueAt("O", i, j);
-                } else if (!row[j].equals("x")) {
+                } else if (!row[j].equals("*")) {
                     table.getModel().setValueAt(row[j].substring(0,2), i, j);
 //                    lModel.addElement(row[j].substring(0,2));
                 }
@@ -88,7 +96,7 @@ public class testGUI extends JFrame {
 //        for (int i = 0; i < gameState.length; ++i) {
 //            String[] row = gameState[i];
 //            for (int j = 0; j < row.length; ++j) {
-//                if (null != row[j] && !row[j].equals("x")) {
+//                if (null != row[j] && !row[j].equals("*")) {
 //                    lModel.addElement(row[j].substring(0, 2));
 //                }
 //            }

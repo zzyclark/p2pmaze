@@ -32,7 +32,7 @@ public class Randomizer {
                 continue;
             }
 
-            grid[randRow][randCol] = "x";
+            grid[randRow][randCol] = "*";
             counter++;
         }
 

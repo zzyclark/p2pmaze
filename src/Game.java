@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.Scanner;
+import java.awt.EventQueue;
 
 /**
  * Created by clark on 22/8/16.
@@ -15,6 +16,8 @@ import java.util.Scanner;
 public class Game {
     //private static String[] serverList = new String[2];
     private static List<String> playerLists;
+    private static Integer[] pos;
+    private static String thisAddr;
     public Game() {}
 
     private static boolean updatePlayerList(List<String> userList, String myAddr, TrackerService trackerStub) throws RemoteException {
@@ -35,12 +38,12 @@ public class Game {
                         continue;
                     }
                 } catch (ConnectException e) {
-                    System.out.println("Cant connect to player "+otherPlayerAddr+" "+e.getMessage());
+//                    System.out.println("Cant connect to player "+otherPlayerAddr+" "+e.getMessage());
                     playerLeft = true;
                     iterator.remove();
                 }
                 catch (NotBoundException e){
-                    System.out.println("Player address not bount "+otherPlayerAddr);
+//                    System.out.println("Player address not bount "+otherPlayerAddr);
                     playerLeft = true;
                     iterator.remove();
                 }
@@ -62,7 +65,7 @@ public class Game {
         for (int i = 0; i < gameState.length; ++i) {
             String[] row = gameState[i];
             for (int j = 0; j < row.length; ++j) {
-                if (null != row[j] && !row[j].equals("x") && !row[j].equals("O")) {
+                if (null != row[j] && !row[j].equals("*") && !row[j].equals("O")) {
                     allUserList.add(row[j]);
                 }
             }
@@ -95,15 +98,17 @@ public class Game {
     private static GameService getServerList(List<String> userList, String userIp, Integer userPort, String userId) throws Exception {
         //use the first two users as servers.
         String myAddr = userId + '@' + userIp + ':' + userPort;
-        GameService userStub = getGameService(myAddr);
         if(userList.size()==1){
+            GameService userStub = getGameService(myAddr);
             //current player is the main server
             userStub.setServer(true,false);
             userStub.startNewGame();
             return userStub;
         }
         else if(userList.size()==2){
+            GameService userStub = getGameService(myAddr);
             String mainServerAddr = userList.get(0);
+
             userStub.setServer(false,true);
             GameService mainServer = getGameService(mainServerAddr);
             mainServer.updateBackupServer();
@@ -178,9 +183,10 @@ public class Game {
         return;
     }
 
-    private static void makeMovement(int movement, String userAddr) throws Exception {
-        System.out.println(userAddr + " make move: " + movement);
+    private static void makeMovement(int movement) throws Exception {
+//        System.out.println(userAddr + " make move: " + movement);
         //Check server status and update
+        String userAddr = thisAddr;
         GameService serverStub = checkMainServer(userAddr);
         if(playerLists.size()>1) {
             GameService subServerStub = checkSubServer(userAddr);
@@ -189,26 +195,26 @@ public class Game {
 
         GameService userStub = getGameService(userAddr);
 
-        Integer[] myPos = userStub.getPos();
-        List<String> serverUserList = userStub.getUserList();
-        userStub.setUserList(serverUserList);
+//        Integer[] myPos = userStub.getPos();
+//        List<String> serverUserList = userStub.getUserList();
+//        userStub.setUserList(serverUserList);
 
         //Call server to remove those inactive user
-        String[][] beforeMovementState = serverStub.getGameState();
+//        String[][] beforeMovementState = serverStub.getGameState();
 //        List<String> inactiveList = getInactiveUserlist(beforeMovementState, userAddr, serverUserList);
 //        if (null != inactiveList) {
 //            serverStub.removeInactiveUser(inactiveList);
 //        }
 
         //Make movement
-        myPos = serverStub.makeMove(movement, myPos, userAddr);
-        userStub.updatePos(myPos);
+        pos = serverStub.makeMove(movement, pos, userAddr);
+//        userStub.updatePos(myPos);
         String[][] newGameState = serverStub.getGameState();
         userStub.updateGameState(newGameState);
         userStub.updatePlayerScores(serverStub.getPlayerScores());
         userStub.updateGui();
 
-        System.out.println("You have get new contact history list after your movement\n");
+//        System.out.println("You have get new contact history list after your movement\n");
 //        for (String[] row: newGameState) {
 //            for(String item: row) {
 //                if (null == item) {
@@ -251,7 +257,8 @@ public class Game {
             String addr = playerLists.get(i);
             try {
                 GameService mainStub = getGameService(addr);
-                mainStub.setServer(true,false);
+                //if(i!=0)
+                    mainStub.setServer(true,false);
                 return mainStub;
             }catch (Exception ex){
                 playerLists.remove(addr);
@@ -268,15 +275,36 @@ public class Game {
     private static GameService checkSubServer(String myAddr) throws Exception{
         for (int i = 1; i<playerLists.size(); i++) {
             try {
-                GameService mainStub = getGameService(playerLists.get(i));
-                mainStub.setServer(false,true);
-                return mainStub;
+                GameService subStub = getGameService(playerLists.get(i));
+                //if(i!=1)
+                    subStub.setServer(false,true);
+                return subStub;
             }catch (Exception ex){
                 playerLists.remove(i);
                 i--;
             }
         }
         return getGameService(myAddr);
+    }
+
+    public static class ScanInputRunnable implements Runnable {
+        public void run() {
+            scanInput();
+        }
+    }
+
+    public static void scanInput(){
+        while(true){
+            Scanner reader = new Scanner(System.in);
+            int step = reader.nextInt();
+            try {
+                makeMovement(step);
+            }
+            catch (Exception ex){
+                System.out.println(ex.toString());
+            }
+        }
+
     }
 
     public static void main(String[] args) {
@@ -295,18 +323,26 @@ public class Game {
 
             System.setProperty("java.rmi.server.hostname",playerIP);
 
-            // Start my own game
-            Thread t = new Thread(new Runnable() {
-                @Override
+
+            EventQueue.invokeLater(new Runnable() {
                 public void run() {
-                    player.start(playerID, playerIP, playerPort, N, K);
+                    try {
+                        // Start my own game
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                player.start(playerID, playerIP, playerPort, N, K);
+                            }
+                        }).start();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    new Thread(new ScanInputRunnable()).start();
                 }
             });
 
-            t.start();
-
             String myAddr = playerID + '@' + playerIP + ':' + playerPort;
-
+            thisAddr = myAddr;
             //do all the rest until my server start
             waitUserServerStart(myAddr);
 
@@ -317,7 +353,7 @@ public class Game {
             boolean playerLeft = updatePlayerList(playerList, myAddr, trackerStub);
             playerLists = new ArrayList<>(playerList);
 
-            System.out.println(myAddr + " joined the game");
+//            System.out.println(myAddr + " joined the game");
 
             //get this game client server
             GameService serverService = getServerList(playerList, playerIP, playerPort, playerID);
@@ -328,22 +364,22 @@ public class Game {
                 serverService.playerListChanged(playerList);
             }
 
-            System.out.println("after my server start");
+//            System.out.println("after my server start");
 
             //update player list for user
             myService.setUserList(playerList);
 
-            System.out.println("after set user list");
+//            System.out.println("after set user list");
 
             //join game
-            Integer[] myPos = serverService.newPlayerJoin(myAddr);
-            myService.updatePos(myPos);
+            pos = serverService.newPlayerJoin(myAddr);
+//            myService.updatePos(pos);
 
             //get updated game state
             myService.updateGameState(serverService.getGameState());
             myService.updatePlayerScores(serverService.getPlayerScores());
 
-            System.out.println("after update gamestate");
+//            System.out.println("after update gamestate");
 
             //join the game
             myService.printGameState();
@@ -351,17 +387,6 @@ public class Game {
             //initial refresh, in order to show the right info in window
             //TODO: need to fix this later
 //            makeMovement(0, myAddr);
-            while(true){
-                Scanner reader = new Scanner(System.in);
-                int step = reader.nextInt();
-                try {
-                    makeMovement(step, myAddr);
-                }
-                catch (Exception ex){
-                    System.out.println(ex.toString());
-                }
-            }
-
         } catch (Exception e) {
             System.err.println("Game client/serve exception: " + e.toString());
             e.printStackTrace();
